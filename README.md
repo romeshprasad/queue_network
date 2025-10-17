@@ -4,13 +4,13 @@ A modular, discrete-event simulation framework for open queueing networks in Pyt
 
 ## Features
 
-- **Jackson Networks**: Classical infinite capacity networks
-- **Finite Capacity**: Networks with rejection/loss when queues are full
-- **Multi-Server Queues**: Support for M/M/c/k configurations
-- **Flexible Routing**: Probabilistic routing between queues
-- **FIFO Scheduling**: First-In-First-Out service discipline
-- **Comprehensive Statistics**: Waiting times, queue lengths, system times
-- **Visualization**: Built-in plotting functions
+- ✅ **Jackson Networks**: Classical infinite capacity networks
+- ✅ **Finite Capacity**: Networks with rejection/loss when queues are full
+- ✅ **Multi-Server Queues**: Support for M/M/c/k configurations
+- ✅ **Flexible Routing**: Probabilistic routing between queues
+- ✅ **FIFO Scheduling**: First-In-First-Out service discipline
+- ✅ **Comprehensive Statistics**: Waiting times, queue lengths, system times
+- ✅ **Visualization**: Built-in plotting functions
 
 ## Project Structure
 
@@ -189,6 +189,194 @@ When capacity is finite, agents are **rejected** (lost) when queues are full:
 - Upstream queues are NOT blocked
 - Product-form solution generally does NOT apply
 - Simulation is required for analysis
+
+---
+
+## Theoretical Validation
+
+The `theoretical_validation.py` file provides analytical solutions for comparison with simulation results. This is crucial for verifying simulator correctness.
+
+### Supported Queue Types
+
+| Queue Type | Class | Description | Use for Validation? |
+|------------|-------|-------------|---------------------|
+| **M/M/1** | `MM1Queue` | Single server, infinite capacity | ✅ Yes - Reliable |
+| **M/M/1/k** | `MM1kQueue` | Single server, finite capacity k | ✅ Yes - Reliable |
+| **M/M/c** | `MMcQueue` | c servers, infinite capacity | ✅ Yes - Reliable |
+| **M/M/c/k** | `MMckQueue` | c servers, finite capacity k | ✅ Yes - Reliable |
+| **Series** | `series` | Series of M/M/c queues | ✅ Yes - Now fixed |
+| **Jackson Network** | `Jacksonnetwork` | Open network, infinite capacity | ✅ Yes - Now fixed |
+| **Finite Jackson** | `Jacksonnetworkfinitecapacity` | Open network, finite capacity | ⚠️ Approximate only |
+
+### Validation Process
+
+**Step 1: Run Simulation**
+```python
+from queueing_network import QueueingNetwork
+import numpy as np
+
+# M/M/1 example
+arrival_rate = 0.8
+service_rate = 1.0
+network = QueueingNetwork(
+    arrival_rate=arrival_rate,
+    service_rates=[service_rate],
+    num_servers=[1],
+    prob_matrix=[[0.0]],
+    max_time=10000  # Long simulation for steady-state
+)
+agents_data = network.simulate()
+stats = network.get_statistics()
+```
+
+**Step 2: Calculate Theoretical Values**
+```python
+from theoretical_validation import MM1Queue
+
+theory = MM1Queue(arrival_rate=0.8, service_rate=1.0)
+theory.calculate_measures()
+theory.print_results()
+```
+
+**Step 3: Compare Results**
+```python
+sim_L = stats[0]['avg_queue_length']
+theory_L = theory.Lq
+
+print(f"Simulation Lq: {sim_L:.4f}")
+print(f"Theoretical Lq: {theory_L:.4f}")
+print(f"Difference: {abs(sim_L - theory_L)/theory_L * 100:.2f}%")
+```
+
+### Key Metrics for Comparison
+
+- **L**: Average number of agents in system
+- **Lq**: Average number of agents waiting in queue
+- **Ls**: Average number of agents in service
+- **W**: Average time in system
+- **Wq**: Average waiting time in queue
+- **Ws**: Average service time
+
+### Validation Guidelines
+
+**For Good Validation:**
+1. **Run long simulations** (max_time ≥ 1000 for stable metrics)
+2. **Ensure system is stable** (ρ < 1 for infinite capacity queues)
+3. **Use multiple random seeds** to check consistency
+4. **Expect 5-15% difference** due to:
+   - Simulation transient period
+   - Random variation
+   - Finite simulation length
+
+**Acceptable Tolerance:**
+- **< 10% difference**: Excellent match
+- **10-20% difference**: Acceptable (increase simulation time)
+- **> 20% difference**: Investigate potential bug
+
+### Validation Examples by Network Type
+
+#### Example 1: M/M/1 Queue
+```python
+# Theoretical
+theory = MM1Queue(arrival_rate=0.8, service_rate=1.0)
+theory.calculate_measures()
+# Expected: Lq = 3.2, Wq = 4.0
+
+# Simulation equivalent
+network = QueueingNetwork(
+    arrival_rate=0.8,
+    service_rates=[1.0],
+    num_servers=[1],
+    prob_matrix=[[0.0]],
+    max_time=10000
+)
+```
+
+#### Example 2: M/M/c Queue
+```python
+# Theoretical
+theory = MMcQueue(arrival_rate=2.0, service_rate=1.0, c=3)
+theory.calculate_measures()
+
+# Simulation equivalent
+network = QueueingNetwork(
+    arrival_rate=2.0,
+    service_rates=[1.0],
+    num_servers=[3],  # 3 servers
+    prob_matrix=[[0.0]],
+    max_time=10000
+)
+```
+
+#### Example 3: Jackson Network (Series)
+```python
+# Theoretical
+theory = Jacksonnetwork(
+    arrival_rate=1.0,
+    service_rate=[1.5, 2.0, 2.5],
+    num_servers=[1, 1, 1],
+    prob_matrix=[[0.0, 1.0, 0.0],
+                 [0.0, 0.0, 1.0],
+                 [0.0, 0.0, 0.0]]
+)
+data, eff_arrival, rho = theory.calculate_measures()
+
+# Simulation equivalent
+network = QueueingNetwork(
+    arrival_rate=1.0,
+    service_rates=[1.5, 2.0, 2.5],
+    num_servers=[1, 1, 1],
+    prob_matrix=[[0.0, 1.0, 0.0],
+                 [0.0, 0.0, 1.0],
+                 [0.0, 0.0, 0.0]],
+    max_time=10000
+)
+```
+
+#### Example 4: M/M/1/k (Finite Capacity)
+```python
+# Theoretical
+theory = MM1kQueue(arrival_rate=0.9, service_rate=1.0, k=10)
+theory.calculate_measures()
+
+# Simulation equivalent
+network = QueueingNetwork(
+    arrival_rate=0.9,
+    service_rates=[1.0],
+    num_servers=[1],
+    prob_matrix=[[0.0]],
+    max_time=10000,
+    capacities=[10]  # Finite capacity
+)
+```
+
+### Important Notes
+
+**✅ Reliable for Validation:**
+- M/M/1, M/M/c, M/M/1/k, M/M/c/k (single queue)
+- Jackson networks with infinite capacity
+- Series queues (after bug fixes)
+
+**⚠️ Use with Caution:**
+- Finite capacity Jackson networks (theory is approximate)
+- Networks with very high utilization (ρ > 0.95)
+- Short simulation runs (transient effects)
+
+**❌ Not Suitable:**
+- Networks with blocking (not rejection)
+- Non-exponential service times
+- Priority queues
+- Time-varying arrival rates
+
+### Bug Fixes in theoretical_validation.py
+
+The following bugs have been fixed:
+1. **Series class**: Dictionary indexing now starts from 0 (was 1)
+2. **Jackson network**: Utilization formula corrected with proper parentheses
+3. **Jackson network**: Traffic equations now solved using linear algebra
+4. **All network classes**: Data dictionary keys now match stage indices
+
+These fixes ensure theoretical calculations are accurate for validation purposes.
 
 ## Future Extensions
 
