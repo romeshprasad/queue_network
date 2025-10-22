@@ -344,8 +344,8 @@ def example_series_multiserver():
     # Display results
     print_statistics(stats)
     print("\nTheoretical Values (use theoretical_validation.py):")
-    print("  series(arrival_rate=3.0, service_rate=[1.5,1.5,2.0],")
-    print("         num_servers=[2,3,2])")
+    print("\nseries(arrival_rate=3.0, service_rate=[1.5,1.5,2.0],")
+    print("\nnum_servers=[2,3,2])")
     
     plot_queue_lengths(agents_data, "Multi-Server Series - Queue Lengths")
     

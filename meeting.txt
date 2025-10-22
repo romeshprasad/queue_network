@@ -1,0 +1,10 @@
+10/22/2025
+Task to do: Correct the data collection for average queue length on arrival, play around the code base.
+
+Meeting points discussed:
+In future we would like to modify the architecture from present FIFO to priority queue or other dispatching algorithm.
+For such work, each agent would have a predefined processing time and that can come from a distribution.
+So think on how we can modify the agent.py file to add such representation to the agent.
+Additionally, we would like to think of representing robots and conveyors within this system? So, think on how can we represent them in the present system
+If the present system cannot handle the representation then in future we would have to redo the structure of the code.
+Think about visualization for the queuing station. 

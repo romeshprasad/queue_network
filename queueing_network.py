@@ -336,3 +336,4 @@ class QueueingNetwork:
                 }
         
         return stats
+
