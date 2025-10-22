@@ -214,11 +214,16 @@ class QueueingNetwork:
             Next queue ID, or None if agent leaves system
         """
         probabilities = self.prob_matrix[current_queue_id]
+
+        # If all 0's, exit system
+        if all(p == 0 for p in probabilities):
+            return None
+
         next_queue_id = np.random.choice(len(probabilities), p=probabilities)
         
         # Check if this represents leaving the system
         # (convention: all zeros or routing back to same queue with p=0)
-        if probabilities[next_queue_id] == 0 or all(p == 0 for p in probabilities):
+        if probabilities[next_queue_id] == 0:
             return None
         
         return next_queue_id
