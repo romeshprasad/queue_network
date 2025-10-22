@@ -1,5 +1,8 @@
+from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
+import csv
+import os
 
 
 def plot_queue_lengths(agents_data, title="Queue Length Over Time"):
@@ -143,3 +146,62 @@ def print_statistics(stats_dict):
         print(f"  Max Queue Length:     {stats['max_queue_length']:.0f}")
     
     print("\n" + "="*70)
+
+def statistics_to_csv(network_type, stats_dict, output_file):
+    """
+    Save simulation statistics to a CSV file.
+    
+    Parameters
+    ----------
+    network_type : str
+        The type of network this is
+    stats_dict : dict
+        Dictionary of statistics from get_statistics()
+    output_file : str
+        Path to the output CSV file
+    """
+    
+    # Define the header and the order of fields
+    fieldnames = [
+        "timestamp",
+        "type",
+        "queue_id",
+        "num_served",
+        "avg_waiting_time",
+        "avg_service_time",
+        "avg_system_time",
+        "avg_queue_length",
+        "max_queue_length"
+    ]
+
+    # Ensure the output directory exists
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    
+    # Check if the file already exists
+    file_exists = os.path.isfile(output_file)
+
+    # Get current timestamp
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Open in append mode if exists, write mode otherwise
+    with open(output_file, "a" if file_exists else "w", newline="") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        
+        # Write header only if file is new
+        if not file_exists:
+            writer.writeheader()
+        
+        # Write each queue’s stats
+        for queue_id, stats in stats_dict.items():
+            row = {
+                "timestamp": timestamp,
+                "type": network_type,
+                "queue_id": queue_id,
+                "num_served": stats["num_served"],
+                "avg_waiting_time": stats["avg_waiting_time"],
+                "avg_service_time": stats["avg_service_time"],
+                "avg_system_time": stats["avg_system_time"],
+                "avg_queue_length": stats["avg_queue_length"],
+                "max_queue_length": stats["max_queue_length"]
+            }
+            writer.writerow(row)

@@ -1,7 +1,8 @@
 import numpy as np
 from queueing_network import QueueingNetwork
-from visualization import plot_queue_lengths, plot_waiting_times, print_statistics
+from visualization import plot_queue_lengths, plot_waiting_times, print_statistics, statistics_to_csv
 
+output_file = "output/example_outputs.csv"
 
 def example_mm1_queue():
     """
@@ -45,6 +46,8 @@ def example_mm1_queue():
     print("\nTheoretical Values (use theoretical_validation.py):")
     print("  MM1Queue(arrival_rate=0.8, service_rate=1.0)")
     print("  Expected Lq ≈ 3.2, Wq ≈ 4.0")
+
+    statistics_to_csv("M/M/1", stats, output_file)
     
     plot_queue_lengths(agents_data, "M/M/1 Queue - Queue Length Over Time")
     
@@ -90,6 +93,8 @@ def example_mmc_queue():
     print_statistics(stats)
     print("\nTheoretical Values (use theoretical_validation.py):")
     print("  MMcQueue(arrival_rate=2.0, service_rate=1.0, c=3)")
+
+    statistics_to_csv("M/M/3", stats, output_file)
     
     plot_queue_lengths(agents_data, "M/M/3 Queue - Queue Length Over Time")
     
@@ -136,6 +141,8 @@ def example_mm1k_queue():
     print(f"\nTotal Rejections: {len(network.rejected_agents)}")
     print("\nTheoretical Values (use theoretical_validation.py):")
     print("  MM1kQueue(arrival_rate=0.9, service_rate=1.0, k=10)")
+
+    statistics_to_csv("M/M/1/10", stats, output_file)
     
     plot_queue_lengths(agents_data, "M/M/1/10 Queue - Queue Length Over Time")
     
@@ -182,6 +189,8 @@ def example_mmck_queue():
     print(f"\nTotal Rejections: {len(network.rejected_agents)}")
     print("\nTheoretical Values (use theoretical_validation.py):")
     print("  MMckQueue(arrival_rate=1.5, service_rate=1.0, c=2, k=15)")
+
+    statistics_to_csv("M/M/2/15", stats, output_file)
     
     plot_queue_lengths(agents_data, "M/M/2/15 Queue - Queue Length Over Time")
     
@@ -235,6 +244,8 @@ def example_jackson_series():
     print("  Jacksonnetwork(arrival_rate=1.0, service_rate=[1.5,2.0,2.5],")
     print("                 num_servers=[1,1,1], prob_matrix=...)")
     print("  Effective arrival rates: [1.0, 1.0, 1.0]")
+
+    statistics_to_csv("Jackson Series", stats, output_file)
     
     plot_queue_lengths(agents_data, "Jackson Series Network - Queue Lengths")
     plot_waiting_times(agents_data, "Jackson Series Network - Waiting Times")
@@ -294,6 +305,8 @@ def example_jackson_branching():
     print("  Jacksonnetwork(arrival_rate=1.0, service_rate=[1.5,1.5,2.0,2.0],")
     print("                 num_servers=[1,1,1,1], prob_matrix=...)")
     print("  Effective arrival rates: [1.0, 0.2, 0.2, 1.0]")
+
+    statistics_to_csv("Jackson Branching", stats, output_file)
     
     plot_queue_lengths(agents_data, "Jackson Branching Network - Queue Lengths")
     
@@ -346,6 +359,8 @@ def example_series_multiserver():
     print("\nTheoretical Values (use theoretical_validation.py):")
     print("  series(arrival_rate=3.0, service_rate=[1.5,1.5,2.0],")
     print("         num_servers=[2,3,2])")
+
+    statistics_to_csv("Multi-Server Series", stats, output_file)
     
     plot_queue_lengths(agents_data, "Multi-Server Series - Queue Lengths")
     
@@ -409,6 +424,8 @@ def example_finite_capacity_network():
     print("\nTheoretical Values (use with caution):")
     print("  Jacksonnetworkfinitecapacity(...)")
     print("  Note: Theory does NOT account for rejection effects properly")
+
+    statistics_to_csv("Finite Capacity", stats, output_file)
     
     plot_queue_lengths(agents_data, "Finite Capacity Network - Queue Lengths")
     
@@ -456,6 +473,7 @@ def example_jackson_network():
     
     # Display results
     print_statistics(stats)
+    statistics_to_csv("Jackson Infinite", stats, output_file)
     plot_queue_lengths(agents_data, "Jackson Network - Queue Lengths")
     
     return network, agents_data
@@ -503,7 +521,7 @@ def example_finite_capacity_network():
     # Display results
     print_statistics(stats)
     print(f"\nTotal Rejections: {len(network.rejected_agents)}")
-    
+    statistics_to_csv("Jackson Finite", stats, output_file)
     plot_queue_lengths(agents_data, "Finite Capacity Network - Queue Lengths")
     
     return network, agents_data
@@ -554,6 +572,7 @@ def example_complex_routing():
     
     # Display results
     print_statistics(stats)
+    statistics_to_csv("Complex Routing", stats, output_file)
     plot_queue_lengths(agents_data, "Complex Routing - Queue Lengths")
     plot_waiting_times(agents_data, "Complex Routing - Waiting Times")
     
@@ -600,6 +619,7 @@ def example_multiserver_network():
     
     # Display results
     print_statistics(stats)
+    statistics_to_csv("Multi-Server", stats, output_file)
     plot_queue_lengths(agents_data, "Multi-Server Network - Queue Lengths")
     
     return network, agents_data
@@ -616,6 +636,8 @@ if __name__ == "__main__":
     print("Each example maps to standard M/M/* queueing notation")
     print("Compare simulation results with theoretical_validation.py")
     print("="*70)
+
+    input("\nPress enter to continue. \n")
     
     # Single Queue Examples (Direct M/M/* mapping)
     network1, data1 = example_mm1_queue()           # M/M/1
@@ -635,6 +657,8 @@ if __name__ == "__main__":
     print("All validation examples completed!")
     print("Use theoretical_validation.py to compute theoretical values")
     print("="*70)
+
+    input("\nPress enter to continue. \n")
     
     """
     Run complex examples.
