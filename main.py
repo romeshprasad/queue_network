@@ -618,10 +618,10 @@ if __name__ == "__main__":
     print("="*70)
     
     # Single Queue Examples (Direct M/M/* mapping)
-    network1, data1 = example_mm1_queue()           # M/M/1
-    network2, data2 = example_mmc_queue()           # M/M/c
-    network3, data3 = example_mm1k_queue()          # M/M/1/k
-    network4, data4 = example_mmck_queue()          # M/M/c/k
+    #network1, data1 = example_mm1_queue()           # M/M/1
+    #network2, data2 = example_mmc_queue()           # M/M/c
+    #network3, data3 = example_mm1k_queue()          # M/M/1/k
+    #network4, data4 = example_mmck_queue()          # M/M/c/k
     
     # Network Examples (Jackson networks)
     network5, data5 = example_jackson_series()      # Series Jackson
