@@ -21,7 +21,7 @@ class Agent:
         ID of server providing service to this agent
     """
     
-    def __init__(self, arrival_time, agent_id):
+    def __init__(self, arrival_time, agent_id, category = None):
         """
         Initialize an agent.
         
@@ -31,6 +31,8 @@ class Agent:
             Time when agent enters the system or current queue
         agent_id : int
             Unique identifier for the agent
+        category : str, optional
+            Category/class of the agent (e.g., 'high_priority', 'standard')
         """
         self.arrival_time = arrival_time
         self.service_start_time = None
@@ -38,6 +40,7 @@ class Agent:
         self.queue_length_on_arrival = None
         self.server_id = None
         self.agent_id = agent_id
+        self.category = category
     
     def __lt__(self, other):
         """
@@ -48,7 +51,8 @@ class Agent:
     
     def __repr__(self):
         """String representation for debugging."""
-        return f"Agent(id={self.agent_id}, arrival={self.arrival_time:.3f})"
+        cat_str = f", cat={self.category}" if self.category else ""
+        return f"Agent(id={self.agent_id}, arrival={self.arrival_time:.3f}{cat_str})"
     
     @staticmethod
     def generate_interarrival_time(arrival_rate):

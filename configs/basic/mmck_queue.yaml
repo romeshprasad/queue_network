@@ -1,0 +1,33 @@
+# ==============================================================================
+# M/M/c/k Queue: Multiple Servers, Finite Capacity
+# ==============================================================================
+# Description:
+#   Two servers with limited waiting room (k=15).
+#   Combines benefits of parallel servers with capacity constraints.
+#
+# Theoretical Comparison:
+#   Use: MMckQueue(arrival_rate=1.5, service_rate=1.0, c=2, k=15)
+#   Expected: Lower rejection rate than M/M/1/k due to multiple servers
+#
+# Notation: M/M/2/15 with λ=1.5, μ=1.0, c=2, k=15
+# ==============================================================================
+
+network:
+  num_queues: 1
+  max_time: 1000.0
+
+queues:
+  - queue_id: 0
+    num_servers: 2  # Two parallel servers
+    capacity: 15    # Maximum 15 customers can wait
+
+categories:
+  default:
+    arrival_probability: 1.0
+    service_rates: [1.0]
+    routing_matrix:
+      - [0.0]
+
+arrivals:
+  external_arrival_rate: 1.5
+  arrival_queue: 0

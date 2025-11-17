@@ -1,0 +1,54 @@
+# ==============================================================================
+# Manufacturing with Quality Control and Rework
+# ==============================================================================
+# Description:
+#   Two product types with different defect rates:
+#   - High-quality (60%): Rarely needs rework (5% failure)
+#   - Standard (40%): Moderate defect rate (15% failure)
+#
+# Real-World Analogy:
+#   Electronics assembly line with different product grades.
+#   Failed units return to production for rework.
+#
+# Network Flow:
+#   Q0: Assembly → Q1: Testing → Q2: Packaging
+#   Failed items at Q1 loop back to Q0
+# ==============================================================================
+
+network:
+  num_queues: 3
+  max_time: 1000.0
+
+queues:
+  - queue_id: 0  # Assembly line
+    num_servers: 3
+    capacity: inf
+  
+  - queue_id: 1  # Quality testing
+    num_servers: 2
+    capacity: inf
+  
+  - queue_id: 2  # Packaging
+    num_servers: 2
+    capacity: inf
+
+categories:
+  high_quality:
+    arrival_probability: 0.6
+    service_rates: [2.0, 2.5, 3.0]  # Easier to assemble and test
+    routing_matrix:
+      - [0.0, 1.0, 0.0]  # Assembly → Testing
+      - [0.05, 0.0, 0.95]  # Testing: 5% fail (rework), 95% pass
+      - [0.0, 0.0, 0.0]  # Exit after packaging
+  
+  standard:
+    arrival_probability: 0.4
+    service_rates: [1.5, 2.0, 2.5]  # More complex assembly
+    routing_matrix:
+      - [0.0, 1.0, 0.0]
+      - [0.15, 0.0, 0.85]  # Testing: 15% fail (rework), 85% pass
+      - [0.0, 0.0, 0.0]
+
+arrivals:
+  external_arrival_rate: 4.0
+  arrival_queue: 0

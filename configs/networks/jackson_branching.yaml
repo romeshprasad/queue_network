@@ -1,0 +1,53 @@
+# ==============================================================================
+# Jackson Network: Branching and Merging
+# ==============================================================================
+# Description:
+#   Four queues with probabilistic routing.
+#   Q0 branches to either Q1 (20%) or Q3 (80%)
+#   Q1 and Q2 eventually merge at Q3
+#
+# Theoretical Comparison:
+#   Use: Jacksonnetwork(arrival_rate=1.0, service_rate=[1.5,1.5,2.0,2.0],
+#                       num_servers=[1,1,1,1], prob_matrix=...)
+#   Expected: Effective arrival rates = [1.0, 0.2, 0.2, 1.0]
+#
+# Features:
+#   - Probabilistic branching at Q0
+#   - Parallel paths through network
+#   - Merging at Q3
+# ==============================================================================
+
+network:
+  num_queues: 4
+  max_time: 1000.0
+
+queues:
+  - queue_id: 0
+    num_servers: 1
+    capacity: inf
+  
+  - queue_id: 1
+    num_servers: 1
+    capacity: inf
+  
+  - queue_id: 2
+    num_servers: 1
+    capacity: inf
+  
+  - queue_id: 3
+    num_servers: 1
+    capacity: inf
+
+categories:
+  default:
+    arrival_probability: 1.0
+    service_rates: [1.5, 1.5, 2.0, 2.0]
+    routing_matrix:
+      - [0.0, 0.2, 0.0, 0.8]  # Q0 branches: 20% to Q1, 80% to Q3
+      - [0.0, 0.0, 1.0, 0.0]  # Q1 → Q2
+      - [0.0, 0.0, 0.0, 1.0]  # Q2 → Q3
+      - [0.0, 0.0, 0.0, 0.0]  # Q3 → Exit
+
+arrivals:
+  external_arrival_rate: 1.0
+  arrival_queue: 0

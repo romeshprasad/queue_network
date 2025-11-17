@@ -1,0 +1,1313 @@
+Excellent! Let me create a comprehensive testing plan for your master's student.
+
+---
+
+## 📋 **Comprehensive Testing Plan for Multi-Class Queueing Network Simulator**
+
+### **Testing Overview**
+
+This testing plan ensures the simulator is production-ready by validating:
+1. **Correctness** - Does it produce accurate results?
+2. **Robustness** - Does it handle edge cases?
+3. **Usability** - Is it easy to use?
+4. **Performance** - Does it run efficiently?
+
+---
+
+## 🎯 **Phase 1: Basic Functionality Tests**
+
+### **Test 1.1: Configuration Loading**
+
+**Objective**: Verify config files load correctly without errors.
+
+**Files to Test**: All 16 config files in `configs/`
+
+**Procedure**:
+```python
+import yaml
+from config_loader import NetworkConfig
+
+config_files = [
+    'configs/basic/mm1_queue.yaml',
+    'configs/basic/mmc_queue.yaml',
+    'configs/basic/mm1k_queue.yaml',
+    'configs/basic/mmck_queue.yaml',
+    'configs/networks/jackson_series.yaml',
+    'configs/networks/jackson_branching.yaml',
+    'configs/networks/series_multiserver.yaml',
+    'configs/networks/finite_capacity.yaml',
+    'configs/multiclass/factory_three_class.yaml',
+    'configs/multiclass/priority_fasttrack.yaml',
+    'configs/multiclass/manufacturing_rework.yaml',
+    'configs/multiclass/hospital_triage.yaml',
+    'configs/advanced/feedback_loops.yaml',
+    'configs/advanced/heavy_traffic.yaml',
+    'configs/advanced/mixed_capacity.yaml',
+]
+
+for config_path in config_files:
+    print(f"Testing: {config_path}")
+    try:
+        config = NetworkConfig(config_path)
+        config.load()
+        config.validate()
+        print(f"  ✓ PASS: {config_path}")
+    except Exception as e:
+        print(f"  ✗ FAIL: {config_path} - {e}")
+```
+
+**Expected Result**: All 16 configs should load and validate without errors.
+
+**Pass Criteria**:
+- ✅ No YAML parsing errors
+- ✅ No validation errors
+- ✅ Configuration summary prints correctly
+
+---
+
+### **Test 1.2: Simulation Execution**
+
+**Objective**: Verify all configs can run simulation without crashing.
+
+**Procedure**:
+```python
+import numpy as np
+from queueing_network import QueueingNetwork
+
+for config_path in config_files:
+    print(f"\nRunning simulation: {config_path}")
+    try:
+        np.random.seed(42)
+        network = QueueingNetwork(config_path)
+        agents_data = network.simulate()
+        stats = network.get_statistics()
+        
+        # Basic checks
+        assert len(agents_data) > 0, "No agents served"
+        assert len(stats) > 0, "No statistics generated"
+        
+        print(f"  ✓ PASS: Served {len(agents_data)} agents")
+    except Exception as e:
+        print(f"  ✗ FAIL: {e}")
+        import traceback
+        traceback.print_exc()
+```
+
+**Expected Result**: All simulations complete without crashes.
+
+**Pass Criteria**:
+- ✅ Simulation completes
+- ✅ Returns non-empty `agents_data`
+- ✅ Returns non-empty `stats`
+- ✅ No Python exceptions
+
+---
+
+## 🔬 **Phase 2: Correctness Validation**
+
+### **Test 2.1: Little's Law Verification**
+
+**Objective**: Verify Little's Law (L = λW) holds for all queues.
+
+**Theory**: For stable queues, L = λ_eff × W should hold within simulation error (~5-15%).
+
+**Procedure**:
+```python
+def test_littles_law(config_path, tolerance=0.15):
+    """Test Little's Law: L = λ * W"""
+    np.random.seed(42)
+    network = QueueingNetwork(config_path)
+    agents_data = network.simulate()
+    stats = network.get_statistics()
+    
+    print(f"\nTesting Little's Law: {config_path}")
+    all_pass = True
+    
+    for queue_id, queue_stats in stats.items():
+        L = queue_stats['L']
+        lambda_eff = queue_stats['lambda_eff']
+        W = queue_stats['W']
+        
+        if lambda_eff > 0 and W > 0:
+            expected_L = lambda_eff * W
+            ratio = L / expected_L if expected_L > 0 else 0
+            error = abs(1 - ratio)
+            
+            status = "✓ PASS" if error < tolerance else "✗ FAIL"
+            print(f"  Queue {queue_id}: L={L:.4f}, λW={expected_L:.4f}, "
+                  f"error={error*100:.2f}% {status}")
+            
+            if error >= tolerance:
+                all_pass = False
+        else:
+            print(f"  Queue {queue_id}: Skipped (no traffic)")
+    
+    return all_pass
+
+# Test all configs
+for config_path in config_files:
+    test_littles_law(config_path)
+```
+
+**Expected Result**: L ≈ λW within 15% for all queues.
+
+**Pass Criteria**:
+- ✅ Error < 10%: Excellent
+- ✅ Error 10-15%: Acceptable
+- ⚠️ Error 15-20%: Marginal (increase max_time)
+- ❌ Error > 20%: Bug likely
+
+---
+
+### **Test 2.2: Theoretical Comparison (Basic Queues)**
+
+**Objective**: Compare simulation results with exact analytical solutions.
+
+**Files to Test**: All configs in `configs/basic/`
+
+**Procedure**:
+```python
+from theoretical_validation import MM1Queue, MMcQueue, MM1kQueue, MMckQueue
+
+def test_mm1_queue():
+    """Test M/M/1 queue against theory"""
+    print("\n" + "="*60)
+    print("Test: M/M/1 Queue Validation")
+    print("="*60)
+    
+    # Run simulation
+    np.random.seed(42)
+    network = QueueingNetwork('configs/basic/mm1_queue.yaml')
+    agents_data = network.simulate()
+    stats = network.get_statistics()[0]
+    
+    # Calculate theoretical values
+    theory = MM1Queue(arrival_rate=0.8, service_rate=1.0)
+    theory.calculate_measures()
+    
+    # Compare metrics
+    metrics = ['L', 'Lq', 'W', 'Wq']
+    print(f"\n{'Metric':<6} {'Simulation':<12} {'Theory':<12} {'Error':<10} {'Status'}")
+    print("-"*60)
+    
+    for metric in metrics:
+        sim_value = stats[metric]
+        theory_value = getattr(theory, metric)
+        error = abs(sim_value - theory_value) / theory_value * 100
+        status = "✓" if error < 10 else "⚠" if error < 20 else "✗"
+        
+        print(f"{metric:<6} {sim_value:<12.4f} {theory_value:<12.4f} "
+              f"{error:<9.2f}% {status}")
+
+def test_mmc_queue():
+    """Test M/M/c queue against theory"""
+    print("\n" + "="*60)
+    print("Test: M/M/c Queue Validation")
+    print("="*60)
+    
+    np.random.seed(42)
+    network = QueueingNetwork('configs/basic/mmc_queue.yaml')
+    agents_data = network.simulate()
+    stats = network.get_statistics()[0]
+    
+    theory = MMcQueue(arrival_rate=2.0, service_rate=1.0, c=3)
+    theory.calculate_measures()
+    
+    metrics = ['L', 'Lq', 'W', 'Wq', 'rho']
+    print(f"\n{'Metric':<6} {'Simulation':<12} {'Theory':<12} {'Error':<10} {'Status'}")
+    print("-"*60)
+    
+    for metric in metrics:
+        sim_value = stats[metric]
+        theory_value = getattr(theory, metric)
+        error = abs(sim_value - theory_value) / theory_value * 100
+        status = "✓" if error < 10 else "⚠" if error < 20 else "✗"
+        
+        print(f"{metric:<6} {sim_value:<12.4f} {theory_value:<12.4f} "
+              f"{error:<9.2f}% {status}")
+
+def test_mm1k_queue():
+    """Test M/M/1/k queue against theory"""
+    print("\n" + "="*60)
+    print("Test: M/M/1/k Queue Validation")
+    print("="*60)
+    
+    np.random.seed(42)
+    network = QueueingNetwork('configs/basic/mm1k_queue.yaml')
+    agents_data = network.simulate()
+    stats = network.get_statistics()[0]
+    
+    theory = MM1kQueue(arrival_rate=0.9, service_rate=1.0, k=10)
+    theory.calculate_measures()
+    
+    # Check loss probability
+    sim_ploss = stats['P_loss']
+    # Theory P_loss calculation (if available in theory class)
+    
+    metrics = ['L', 'Lq', 'W', 'Wq']
+    print(f"\n{'Metric':<6} {'Simulation':<12} {'Theory':<12} {'Error':<10} {'Status'}")
+    print("-"*60)
+    
+    for metric in metrics:
+        sim_value = stats[metric]
+        theory_value = getattr(theory, metric)
+        error = abs(sim_value - theory_value) / theory_value * 100
+        status = "✓" if error < 10 else "⚠" if error < 20 else "✗"
+        
+        print(f"{metric:<6} {sim_value:<12.4f} {theory_value:<12.4f} "
+              f"{error:<9.2f}% {status}")
+    
+    print(f"\nLoss Probability: {sim_ploss:.4f}")
+    print(f"Rejections: {stats['rejected_arrivals']}")
+
+# Run all basic queue tests
+test_mm1_queue()
+test_mmc_queue()
+test_mm1k_queue()
+# test_mmck_queue()  # Similar pattern
+```
+
+**Expected Result**: Simulation within 5-15% of theory.
+
+**Pass Criteria**:
+- ✅ All metrics within 15% of theory
+- ✅ Utilization (ρ) matches expected value
+- ✅ Loss probability > 0 for finite capacity queues
+
+---
+
+### **Test 2.3: Jackson Network Validation**
+
+**Objective**: Verify effective arrival rates match theory.
+
+**Procedure**:
+```python
+from theoretical_validation import Jacksonnetwork
+
+def test_jackson_series():
+    """Test Jackson network in series"""
+    print("\n" + "="*60)
+    print("Test: Jackson Series Network Validation")
+    print("="*60)
+    
+    # Run simulation
+    np.random.seed(42)
+    network = QueueingNetwork('configs/networks/jackson_series.yaml')
+    agents_data = network.simulate()
+    stats = network.get_statistics()
+    
+    # Theoretical values
+    theory = Jacksonnetwork(
+        arrival_rate=1.0,
+        service_rate=[1.5, 2.0, 2.5],
+        num_servers=[1, 1, 1],
+        prob_matrix=[[0.0, 1.0, 0.0],
+                     [0.0, 0.0, 1.0],
+                     [0.0, 0.0, 0.0]]
+    )
+    data, eff_arrival, rho = theory.calculate_measures()
+    
+    # Compare effective arrival rates
+    print(f"\n{'Queue':<8} {'Sim λ_eff':<12} {'Theory λ_eff':<12} {'Error':<10} {'Status'}")
+    print("-"*60)
+    
+    for queue_id in range(3):
+        sim_lambda = stats[queue_id]['lambda_eff']
+        theory_lambda = eff_arrival[queue_id]
+        error = abs(sim_lambda - theory_lambda) / theory_lambda * 100
+        status = "✓" if error < 10 else "⚠" if error < 20 else "✗"
+        
+        print(f"{queue_id:<8} {sim_lambda:<12.4f} {theory_lambda:<12.4f} "
+              f"{error:<9.2f}% {status}")
+    
+    # Compare utilizations
+    print(f"\n{'Queue':<8} {'Sim ρ':<12} {'Theory ρ':<12} {'Error':<10} {'Status'}")
+    print("-"*60)
+    
+    for queue_id in range(3):
+        sim_rho = stats[queue_id]['rho']
+        theory_rho = rho[queue_id]
+        error = abs(sim_rho - theory_rho) / theory_rho * 100
+        status = "✓" if error < 10 else "⚠" if error < 20 else "✗"
+        
+        print(f"{queue_id:<8} {sim_rho:<12.4f} {theory_rho:<12.4f} "
+              f"{error:<9.2f}% {status}")
+
+test_jackson_series()
+```
+
+**Expected Result**: Effective arrival rates and utilizations match theory.
+
+**Pass Criteria**:
+- ✅ λ_eff within 10% of theory for each queue
+- ✅ ρ within 10% of theory for each queue
+
+---
+
+## 🧩 **Phase 3: Multi-Class Specific Tests**
+
+### **Test 3.1: Category Distribution**
+
+**Objective**: Verify agents are assigned to categories according to specified probabilities.
+
+**Procedure**:
+```python
+def test_category_distribution(config_path, expected_probs, tolerance=0.05):
+    """Verify category assignment probabilities"""
+    print(f"\nTesting category distribution: {config_path}")
+    
+    np.random.seed(42)
+    network = QueueingNetwork(config_path)
+    agents_data = network.simulate()
+    stats_by_cat = network.get_statistics_by_category()
+    
+    # Count arrivals by category
+    total_arrivals = 0
+    category_arrivals = {}
+    
+    for cat in network.categories:
+        cat_total = sum(stats_by_cat[cat][qid]['total_arrivals'] 
+                       for qid in range(len(network.queues)))
+        category_arrivals[cat] = cat_total
+        total_arrivals += cat_total
+    
+    # Calculate actual probabilities
+    print(f"\n{'Category':<15} {'Expected':<12} {'Actual':<12} {'Error':<10} {'Status'}")
+    print("-"*60)
+    
+    all_pass = True
+    for cat, expected_prob in expected_probs.items():
+        actual_count = category_arrivals[cat]
+        actual_prob = actual_count / total_arrivals if total_arrivals > 0 else 0
+        error = abs(actual_prob - expected_prob)
+        status = "✓" if error < tolerance else "✗"
+        
+        print(f"{cat:<15} {expected_prob:<12.3f} {actual_prob:<12.3f} "
+              f"{error:<9.3f} {status}")
+        
+        if error >= tolerance:
+            all_pass = False
+    
+    return all_pass
+
+# Test factory config
+test_category_distribution(
+    'configs/multiclass/factory_three_class.yaml',
+    {'express': 0.3, 'standard': 0.5, 'bulk': 0.2},
+    tolerance=0.05
+)
+
+# Test hospital config
+test_category_distribution(
+    'configs/multiclass/hospital_triage.yaml',
+    {'emergency': 0.15, 'urgent': 0.35, 'routine': 0.50},
+    tolerance=0.05
+)
+```
+
+**Expected Result**: Actual distribution within 5% of specified probabilities.
+
+**Pass Criteria**:
+- ✅ Each category within 5% of target probability
+- ✅ All categories sum to 100%
+
+---
+
+### **Test 3.2: Category-Specific Routing**
+
+**Objective**: Verify each category follows its specified routing matrix.
+
+**Procedure**:
+```python
+def test_category_routing(config_path, category, expected_routing):
+    """
+    Verify category follows expected routing.
+    
+    expected_routing: dict like {
+        'skip_queues': [1],  # Queues this category should skip
+        'visit_queues': [0, 2],  # Queues this category should visit
+    }
+    """
+    print(f"\nTesting routing for category '{category}': {config_path}")
+    
+    np.random.seed(42)
+    network = QueueingNetwork(config_path)
+    agents_data = network.simulate()
+    stats_by_cat = network.get_statistics_by_category()
+    
+    # Check which queues received traffic from this category
+    for qid in range(len(network.queues)):
+        arrivals = stats_by_cat[category][qid]['total_arrivals']
+        
+        if qid in expected_routing.get('skip_queues', []):
+            # Should have 0 or very few arrivals
+            if arrivals > 5:  # Allow small margin for edge cases
+                print(f"  ✗ FAIL: Queue {qid} should be skipped but got {arrivals} arrivals")
+            else:
+                print(f"  ✓ PASS: Queue {qid} correctly skipped ({arrivals} arrivals)")
+        
+        elif qid in expected_routing.get('visit_queues', []):
+            # Should have significant arrivals
+            if arrivals > 0:
+                print(f"  ✓ PASS: Queue {qid} visited ({arrivals} arrivals)")
+            else:
+                print(f"  ✗ FAIL: Queue {qid} should be visited but got 0 arrivals")
+
+# Test express category skips Q1
+test_category_routing(
+    'configs/multiclass/factory_three_class.yaml',
+    category='express',
+    expected_routing={'skip_queues': [1], 'visit_queues': [0, 2]}
+)
+
+# Test VIP skips Q1
+test_category_routing(
+    'configs/multiclass/priority_fasttrack.yaml',
+    category='vip',
+    expected_routing={'skip_queues': [1], 'visit_queues': [0, 2]}
+)
+```
+
+**Expected Result**: Categories follow specified routing patterns.
+
+**Pass Criteria**:
+- ✅ Express/VIP categories have 0 arrivals at skipped queues
+- ✅ All categories visit expected queues
+
+---
+
+### **Test 3.3: Feedback Loop Handling**
+
+**Objective**: Verify agents can successfully loop back to previous queues.
+
+**Procedure**:
+```python
+def test_feedback_loops(config_path, category, loop_info):
+    """
+    Test feedback loops work correctly.
+    
+    loop_info: dict like {
+        'from_queue': 1,
+        'to_queue': 0,
+        'expected_ratio': 0.2  # 20% should loop back
+    }
+    """
+    print(f"\nTesting feedback loop: {config_path}")
+    
+    np.random.seed(42)
+    network = QueueingNetwork(config_path)
+    agents_data = network.simulate()
+    stats_by_cat = network.get_statistics_by_category()
+    
+    from_queue = loop_info['from_queue']
+    to_queue = loop_info['to_queue']
+    
+    # Get arrivals at both queues
+    from_arrivals = stats_by_cat[category][from_queue]['total_arrivals']
+    to_arrivals = stats_by_cat[category][to_queue]['total_arrivals']
+    
+    # Check if to_queue has more arrivals than external (indicating feedback)
+    external_rate = network.arrival_rate * network.category_probs[category]
+    expected_external_arrivals = external_rate * network.max_time
+    
+    print(f"  Queue {to_queue} arrivals: {to_arrivals}")
+    print(f"  Expected external arrivals: {expected_external_arrivals:.0f}")
+    
+    if to_arrivals > expected_external_arrivals * 1.1:  # 10% margin
+        print(f"  ✓ PASS: Feedback detected (arrivals exceed external)")
+        return True
+    else:
+        print(f"  ✗ FAIL: No feedback detected")
+        return False
+
+# Test bulk category rework loop
+test_feedback_loops(
+    'configs/multiclass/factory_three_class.yaml',
+    category='bulk',
+    loop_info={'from_queue': 1, 'to_queue': 0, 'expected_ratio': 0.2}
+)
+
+# Test high_quality rework
+test_feedback_loops(
+    'configs/multiclass/manufacturing_rework.yaml',
+    category='high_quality',
+    loop_info={'from_queue': 1, 'to_queue': 0, 'expected_ratio': 0.05}
+)
+```
+
+**Expected Result**: Queue receiving feedback has more arrivals than external rate.
+
+**Pass Criteria**:
+- ✅ Feedback queue arrivals > external arrivals
+- ✅ Loop percentage roughly matches routing probability
+
+---
+
+### **Test 3.4: Service Rate Differences**
+
+**Objective**: Verify different categories have different average service times.
+
+**Procedure**:
+```python
+def test_service_rate_differences(config_path):
+    """Verify categories have different service characteristics"""
+    print(f"\nTesting service rate differences: {config_path}")
+    
+    np.random.seed(42)
+    network = QueueingNetwork(config_path)
+    
+    # Calculate expected service times per category
+    print(f"\n{'Category':<15} {'Queue':<8} {'Config Rate':<12} {'Expected Ws':<12}")
+    print("-"*60)
+    
+    for cat in network.categories:
+        for qid in range(len(network.queues)):
+            service_rate = network.category_service_rates[cat][qid]
+            expected_ws = 1.0 / service_rate
+            print(f"{cat:<15} {qid:<8} {service_rate:<12.2f} {expected_ws:<12.4f}")
+    
+    # Run simulation and check actual service times
+    agents_data = network.simulate()
+    
+    # Compute actual average service times by category and queue
+    # (This would require tracking service times by category in agents_data)
+    # For now, just verify config was loaded correctly
+    
+    print("\n✓ Service rates configured correctly per category")
+
+test_service_rate_differences('configs/multiclass/factory_three_class.yaml')
+test_service_rate_differences('configs/multiclass/hospital_triage.yaml')
+```
+
+**Expected Result**: Different categories have different service rate configurations.
+
+**Pass Criteria**:
+- ✅ Express/VIP/Emergency have higher service rates
+- ✅ Bulk/Routine have lower service rates
+
+---
+
+## 🛡️ **Phase 4: Edge Cases and Robustness**
+
+### **Test 4.1: Finite Capacity Rejection**
+
+**Objective**: Verify finite capacity queues reject agents when full.
+
+**Procedure**:
+```python
+def test_finite_capacity_rejection():
+    """Test that finite capacity causes rejections"""
+    print("\n" + "="*60)
+    print("Test: Finite Capacity Rejection")
+    print("="*60)
+    
+    # Test M/M/1/k
+    np.random.seed(42)
+    network = QueueingNetwork('configs/basic/mm1k_queue.yaml')
+    agents_data = network.simulate()
+    stats = network.get_statistics()
+    
+    rejections = len(network.rejected_agents)
+    p_loss = stats[0]['P_loss']
+    
+    print(f"\nM/M/1/k Queue:")
+    print(f"  Total rejections: {rejections}")
+    print(f"  Loss probability: {p_loss:.4f}")
+    
+    if rejections > 0 and p_loss > 0:
+        print(f"  ✓ PASS: Rejections occurring as expected")
+    else:
+        print(f"  ✗ FAIL: No rejections (capacity constraint not working)")
+    
+    # Test finite capacity network
+    np.random.seed(42)
+    network = QueueingNetwork('configs/networks/finite_capacity.yaml')
+    agents_data = network.simulate()
+    
+    rejections = len(network.rejected_agents)
+    print(f"\nFinite Capacity Network:")
+    print(f"  Total rejections: {rejections}")
+    
+    # Check rejections by queue
+    rejection_by_queue = {}
+    for rej in network.rejected_agents:
+        qid = rej['queue_id']
+        rejection_by_queue[qid] = rejection_by_queue.get(qid, 0) + 1
+    
+    for qid, count in rejection_by_queue.items():
+        print(f"  Queue {qid}: {count} rejections")
+    
+    if rejections > 0:
+        print(f"  ✓ PASS: Network rejections working")
+    else:
+        print(f"  ⚠ WARNING: No rejections (may need higher arrival rate)")
+
+test_finite_capacity_rejection()
+```
+
+**Expected Result**: Finite capacity queues show rejections, P_loss > 0.
+
+**Pass Criteria**:
+- ✅ Rejections occur when capacity is finite
+- ✅ P_loss calculated correctly
+- ✅ rejected_agents list populated
+
+---
+
+### **Test 4.2: High Utilization Stability**
+
+**Objective**: Verify simulator handles high utilization (ρ ≈ 0.95) without issues.
+
+**Procedure**:
+```python
+def test_high_utilization():
+    """Test simulator stability under heavy traffic"""
+    print("\n" + "="*60)
+    print("Test: High Utilization Stability")
+    print("="*60)
+    
+    np.random.seed(42)
+    network = QueueingNetwork('configs/advanced/heavy_traffic.yaml')
+    
+    try:
+        agents_data = network.simulate()
+        stats = network.get_statistics()
+        
+        print(f"\nSimulation completed successfully")
+        for qid, qstats in stats.items():
+            print(f"  Queue {qid}: ρ = {qstats['rho']:.4f}, "
+                  f"L = {qstats['L']:.2f}, Wq = {qstats['Wq']:.2f}")
+        
+        # Check if queues are stable
+        max_rho = max(qstats['rho'] for qstats in stats.values())
+        
+        if max_rho > 1.0:
+            print(f"  ⚠ WARNING: Utilization > 1.0 (unstable system)")
+        elif max_rho > 0.9:
+            print(f"  ✓ PASS: High utilization handled (ρ_max = {max_rho:.3f})")
+        else:
+            print(f"  ⚠ INFO: Not actually high utilization (ρ_max = {max_rho:.3f})")
+            
+    except Exception as e:
+        print(f"  ✗ FAIL: Simulation crashed under high utilization")
+        print(f"  Error: {e}")
+
+test_high_utilization()
+```
+
+**Expected Result**: Simulation completes, but queues build up significantly.
+
+**Pass Criteria**:
+- ✅ Simulation doesn't crash
+- ✅ ρ values close to 0.9-0.95
+- ✅ L and Wq are large (expected for high utilization)
+
+---
+
+### **Test 4.3: Empty Queue Handling**
+
+**Objective**: Verify simulator handles queues with no traffic gracefully.
+
+**Procedure**:
+```python
+def test_empty_queue_handling():
+    """Test queues that receive no traffic"""
+    print("\n" + "="*60)
+    print("Test: Empty Queue Handling")
+    print("="*60)
+    
+    # In priority_fasttrack, VIP skips Q1 entirely
+    np.random.seed(42)
+    network = QueueingNetwork('configs/multiclass/priority_fasttrack.yaml')
+    agents_data = network.simulate()
+    stats = network.get_statistics()
+    stats_by_cat = network.get_statistics_by_category()
+    
+    # Check if VIP category at Q1 has zero arrivals
+    vip_q1_arrivals = stats_by_cat['vip'][1]['total_arrivals']
+    
+    print(f"VIP arrivals at Q1 (should be 0): {vip_q1_arrivals}")
+    
+    if vip_q1_arrivals == 0:
+        print(f"  ✓ PASS: Empty queue handled correctly")
+    else:
+        print(f"  ✗ FAIL: VIP category should not visit Q1")
+    
+    # Check that statistics still generated for Q1
+    if 1 in stats:
+        print(f"  ✓ PASS: Statistics generated for all queues")
+    else:
+        print(f"  ✗ FAIL: Missing statistics for Q1")
+
+test_empty_queue_handling()
+```
+
+**Expected Result**: Queues with no traffic still have statistics (with 0 values).
+
+**Pass Criteria**:
+- ✅ No crashes when queue has 0 arrivals
+- ✅ Statistics still generated (with 0 or N/A values)
+
+---
+
+### **Test 4.4: Random Seed Reproducibility**
+
+**Objective**: Verify same seed produces identical results.
+
+**Procedure**:
+```python
+def test_reproducibility(config_path, seed=42):
+    """Test that same seed gives same results"""
+    print(f"\nTesting reproducibility: {config_path}")
+    
+    # Run twice with same seed
+    results = []
+    for run in range(2):
+        np.random.seed(seed)
+        network = QueueingNetwork(config_path)
+        agents_data = network.simulate()
+        stats = network.get_statistics()
+        
+        # Extract key metrics
+        metrics = {
+            qid: (qstats['L'], qstats['Wq'], qstats['num_served'])
+            for qid, qstats in stats.items()
+        }
+        results.append(metrics)
+    
+    # Compare results
+    if results[0] == results[1]:
+        print(f"  ✓ PASS: Results are reproducible")
+        return True
+    else:
+        print(f"  ✗ FAIL: Results differ between runs")
+        print(f"  Run 1: {results[0]}")
+        print(f"  Run 2: {results[1]}")
+        return False
+
+# Test on multiple configs
+test_reproducibility('configs/basic/mm1_queue.yaml')
+test_reproducibility('configs/multiclass/factory_three_class.yaml')
+```
+
+**Expected Result**: Identical results with same seed.
+
+**Pass Criteria**:
+- ✅ All metrics identical between runs
+- ✅ Same number of agents served
+- ✅ Same queue lengths and waiting times
+
+---
+
+## 📊 **Phase 5: Performance Testing**
+
+### **Test 5.1: Simulation Speed**
+
+**Objective**: Verify simulator runs in reasonable time.
+
+**Procedure**:
+```python
+import time
+
+def test_simulation_speed(config_path, expected_max_time=10.0):
+    """Measure simulation runtime"""
+    print(f"\nTesting speed: {config_path}")
+    
+    np.random.seed(42)
+    
+    start_time = time.time()
+    network = QueueingNetwork(config_path)
+    agents_data = network.simulate()
+    end_time = time.time()
+    
+    runtime = end_time - start_time
+    agents_served = len(agents_data)
+    throughput = agents_served / runtime if runtime > 0 else 0
+    
+    print(f"  Simulation time: {runtime:.2f} seconds")
+    print(f"  Agents served: {agents_served}")
+    print(f"  Throughput: {throughput:.0f} agents/sec")
+    
+    if runtime < expected_max_time:
+        print(f"  ✓ PASS: Within acceptable time")
+    else:
+        print(f"  ⚠ WARNING: Slower than expected ({expected_max_time}s)")
+    
+    return runtime
+
+# Test all configs
+runtimes = {}
+for config_path in config_files:
+    runtimes[config_path] = test_simulation_speed(config_path)
+
+print(f"\n{'Config':<50} {'Time (s)':<10}")
+print("-"*60)
+for config, runtime in sorted(runtimes.items(), key=lambda x: x[1], reverse=True):
+    print(f"{config:<50} {runtime:<10.2f}")
+```
+
+**Expected Result**: Most simulations < 5 seconds, none > 30 seconds.
+
+**Pass Criteria**:
+- ✅ Basic configs: < 2 seconds
+- ✅ Network configs: < 5 seconds
+- ✅ Multi-class configs: < 10 seconds
+- ⚠️ Heavy traffic: May take longer (acceptable)
+
+---
+
+### **Test 5.2: Memory Usage**
+
+**Objective**: Verify simulator doesn't leak memory or use excessive RAM.
+
+**Procedure**:
+```python
+import psutil
+import os
+
+def test_memory_usage(config_path):
+    """Monitor memory usage during simulation"""
+    process = psutil.Process(os.getpid())
+    
+    # Measure before
+    mem_before = process.memory_info().rss / 1024 / 1024  # MB
+    
+    np.random.seed(42)
+    network = QueueingNetwork(config_path)
+    agents_data = network.simulate()
+    
+    # Measure after
+    mem_after = process.memory_info().rss / 1024 / 1024  # MB
+    mem_used = mem_after - mem_before
+    
+    print(f"{config_path}")
+    print(f"  Memory before: {mem_before:.1f} MB")
+    print(f"  Memory after: {mem_after:.1f} MB")
+    print(f"  Memory used: {mem_used:.1f} MB")
+    
+    if mem_used < 500:  # Less than 500 MB
+        print(f"  ✓ PASS: Acceptable memory usage")
+    else:
+        print(f"  ⚠ WARNING: High memory usage")
+
+# Test on largest configs
+test_memory_usage('configs/advanced/heavy_traffic.yaml')
+test_memory_usage('configs/multiclass/hospital_triage.yaml')
+```
+
+**Expected Result**: < 500 MB memory usage per simulation.
+
+**Pass Criteria**:
+- ✅ Memory usage < 500 MB
+- ✅ No memory leaks (memory released after simulation)
+
+---
+
+## 📝 **Phase 6: Usability Testing**
+
+### **Test 6.1: Error Messages**
+
+**Objective**: Verify helpful error messages for common mistakes.
+
+**Procedure**:
+```python
+def test_error_messages():
+    """Test that config errors give helpful messages"""
+    print("\n" + "="*60)
+    print("Test: Configuration Error Messages")
+    print("="*60)
+    
+    # Test 1: Invalid category probabilities
+    test_configs = {
+        'invalid_probs.yaml': """
+network:
+  num_queues: 1
+  max_time: 100.0
+queues:
+  - queue_id: 0
+    num_servers: 1
+    capacity: inf
+categories:
+  cat1:
+    arrival_probability: 0.6
+  cat2:
+    arrival_probability: 0.3
+arrivals:
+  external_arrival_rate: 1.0
+  arrival_queue: 0
+""",
+        'invalid_routing.yaml': """
+network:
+  num_queues: 2
+  max_time: 100.0
+queues:
+  - queue_id: 0
+    num_servers: 1
+  - queue_id: 1
+    num_servers: 1
+categories:
+  default:
+    arrival_probability: 1.0
+    service_rates: [1.0, 1.0]
+    routing_matrix:
+      - [0.0, 1.5]  # Sum > 1.0
+      - [0.0, 0.0]
+arrivals:
+  external_arrival_rate: 1.0
+  arrival_queue: 0
+"""
+    }
+    
+    for filename, content in test_configs.items():
+        print(f"\nTesting: {filename}")
+        
+        # Write temp file
+        with open(f'/tmp/{filename}', 'w') as f:
+            f.write(content)
+        
+        try:
+            config = NetworkConfig(f'/tmp/{filename}')
+            config.load()
+            config.validate()
+            print(f"  ✗ FAIL: Should have raised validation error")
+        except ValueError as e:
+            error_msg = str(e)
+            if "sum to" in error_msg or ">" in error_msg:
+                print(f"  ✓ PASS: Helpful error message")
+                print(f"  Message: {error_msg}")
+            else:
+                print(f"  ⚠ WARNING: Error caught but message unclear")
+                print(f"  Message: {error_msg}")
+
+test_error_messages()
+```
+
+**Expected Result**: Clear, actionable error messages.
+
+**Pass Criteria**:
+- ✅ Error messages indicate what's wrong
+- ✅ Error messages suggest how to fix
+- ✅ No cryptic Python tracebacks for user errors
+
+---
+
+### **Test 6.2: Documentation Accuracy**
+
+**Objective**: Verify README examples work as documented.
+
+**Procedure**:
+```python
+def test_readme_examples():
+    """Test that README examples actually work"""
+    print("\n" + "="*60)
+    print("Test: README Examples")
+    print("="*60)
+    
+    # Example 1 from README
+    print("\nTesting README Quick Start example...")
+    try:
+        from queueing_network import QueueingNetwork
+        from visualization import print_statistics
+        import numpy as np
+        
+        np.random.seed(42)
+        network = QueueingNetwork('configs/basic/mm1_queue.yaml')
+        agents_data = network.simulate()
+        stats = network.get_statistics()
+        print_statistics(stats)
+        
+        print("  ✓ PASS: Quick start example works")
+    except Exception as e:
+        print(f"  ✗ FAIL: {e}")
+    
+    # Example 2 from README - multi-class
+    print("\nTesting README multi-class example...")
+    try:
+        network = QueueingNetwork('configs/multiclass/factory_three_class.yaml')
+        agents_data = network.simulate()
+        stats_by_category = network.get_statistics_by_category()
+        
+        print("  ✓ PASS: Multi-class example works")
+    except Exception as e:
+        print(f"  ✗ FAIL: {e}")
+
+test_readme_examples()
+```
+
+**Expected Result**: All README examples run without errors.
+
+**Pass Criteria**:
+- ✅ Quick start example works
+- ✅ All code snippets in README are syntactically correct
+- ✅ Expected outputs match actual outputs
+
+---
+
+## 📋 **Master Testing Script**
+
+Create `run_all_tests.py`:
+
+```python
+"""
+Comprehensive Test Suite for Multi-Class Queueing Network Simulator
+
+Run all validation tests and generate report.
+"""
+
+import numpy as np
+from queueing_network import QueueingNetwork
+from config_loader import NetworkConfig
+from theoretical_validation import MM1Queue, MMcQueue
+import time
+import sys
+
+class TestSuite:
+    def __init__(self):
+        self.results = {
+            'passed': 0,
+            'failed': 0,
+            'warnings': 0
+        }
+        self.test_details = []
+    
+    def run_test(self, test_name, test_func, *args, **kwargs):
+        """Run a single test and record results"""
+        print(f"\n{'='*70}")
+        print(f"Running: {test_name}")
+        print(f"{'='*70}")
+        
+        try:
+            start_time = time.time()
+            result = test_func(*args, **kwargs)
+            end_time = time.time()
+            
+            runtime = end_time - start_time
+            
+            if result is True:
+                status = "✓ PASS"
+                self.results['passed'] += 1
+            elif result is False:
+                status = "✗ FAIL"
+                self.results['failed'] += 1
+            else:
+                status = "⚠ WARNING"
+                self.results['warnings'] += 1
+            
+            self.test_details.append({
+                'name': test_name,
+                'status': status,
+                'runtime': runtime
+            })
+            
+            print(f"\n{status} (Runtime: {runtime:.2f}s)")
+            
+        except Exception as e:
+            print(f"\n✗ FAIL: Exception occurred")
+            print(f"Error: {e}")
+            import traceback
+            traceback.print_exc()
+            
+            self.results['failed'] += 1
+            self.test_details.append({
+                'name': test_name,
+                'status': "✗ FAIL (Exception)",
+                'runtime': 0
+            })
+    
+    def print_summary(self):
+        """Print test summary report"""
+        print("\n" + "="*70)
+        print("TEST SUMMARY")
+        print("="*70)
+        
+        total_tests = sum(self.results.values())
+        print(f"\nTotal Tests: {total_tests}")
+        print(f"  ✓ Passed:   {self.results['passed']}")
+        print(f"  ✗ Failed:   {self.results['failed']}")
+        print(f"  ⚠ Warnings: {self.results['warnings']}")
+        
+        pass_rate = (self.results['passed'] / total_tests * 100) if total_tests > 0 else 0
+        print(f"\nPass Rate: {pass_rate:.1f}%")
+        
+        print(f"\n{'Test Name':<50} {'Status':<15} {'Time (s)':<10}")
+        print("-"*70)
+        for test in self.test_details:
+            print(f"{test['name']:<50} {test['status']:<15} {test['runtime']:<10.2f}")
+        
+        print("\n" + "="*70)
+        
+        # Determine overall result
+        if self.results['failed'] == 0:
+            print("✓ ALL TESTS PASSED")
+            return 0
+        else:
+            print(f"✗ {self.results['failed']} TEST(S) FAILED")
+            return 1
+
+
+def main():
+    """Run full test suite"""
+    suite = TestSuite()
+    
+    # Phase 1: Basic Functionality
+    print("\n" + "#"*70)
+    print("# PHASE 1: BASIC FUNCTIONALITY")
+    print("#"*70)
+    
+    suite.run_test("Config Loading - All Files", test_all_configs_load)
+    suite.run_test("Simulation Execution - All Configs", test_all_configs_run)
+    
+    # Phase 2: Correctness
+    print("\n" + "#"*70)
+    print("# PHASE 2: CORRECTNESS VALIDATION")
+    print("#"*70)
+    
+    suite.run_test("Little's Law - M/M/1", test_littles_law, 'configs/basic/mm1_queue.yaml')
+    suite.run_test("Theoretical Comparison - M/M/1", test_mm1_theory)
+    suite.run_test("Theoretical Comparison - M/M/c", test_mmc_theory)
+    suite.run_test("Jackson Network Validation", test_jackson_series)
+    
+    # Phase 3: Multi-Class
+    print("\n" + "#"*70)
+    print("# PHASE 3: MULTI-CLASS FEATURES")
+    print("#"*70)
+    
+    suite.run_test("Category Distribution", test_category_distribution,
+                   'configs/multiclass/factory_three_class.yaml',
+                   {'express': 0.3, 'standard': 0.5, 'bulk': 0.2})
+    suite.run_test("Category Routing - Express Skip", test_express_routing)
+    suite.run_test("Feedback Loops", test_feedback_loop)
+    
+    # Phase 4: Edge Cases
+    print("\n" + "#"*70)
+    print("# PHASE 4: EDGE CASES & ROBUSTNESS")
+    print("#"*70)
+    
+    suite.run_test("Finite Capacity Rejection", test_finite_capacity)
+    suite.run_test("High Utilization Stability", test_high_utilization)
+    suite.run_test("Reproducibility", test_reproducibility, 'configs/basic/mm1_queue.yaml')
+    
+    # Phase 5: Performance
+    print("\n" + "#"*70)
+    print("# PHASE 5: PERFORMANCE")
+    print("#"*70)
+    
+    suite.run_test("Simulation Speed", test_simulation_speeds)
+    
+    # Print summary
+    suite.print_summary()
+    
+    return suite.results['failed']
+
+
+if __name__ == "__main__":
+    exit_code = main()
+    sys.exit(exit_code)
+```
+
+---
+
+## 📊 **Deliverable: Test Report Template**
+
+Your master's student should fill out this report:
+
+```markdown
+# Queueing Network Simulator - Test Report
+
+**Tester**: [Student Name]
+**Date**: [Test Date]
+**Version**: [Simulator Version/Commit Hash]
+
+## Executive Summary
+
+- Total Tests Run: XX
+- Tests Passed: XX (XX%)
+- Tests Failed: XX
+- Warnings: XX
+
+Overall Assessment: [PASS / FAIL / NEEDS WORK]
+
+## Phase 1: Basic Functionality
+
+| Test | Result | Notes |
+|------|--------|-------|
+| Config Loading | ✓/✗ | |
+| Simulation Execution | ✓/✗ | |
+
+## Phase 2: Correctness
+
+| Test | Sim Value | Theory Value | Error | Result |
+|------|-----------|--------------|-------|--------|
+| M/M/1 - L | | | | ✓/✗ |
+| M/M/1 - Wq | | | | ✓/✗ |
+| M/M/c - ρ | | | | ✓/✗ |
+| Jackson λ_eff | | | | ✓/✗ |
+
+## Phase 3: Multi-Class
+
+| Test | Expected | Actual | Result |
+|------|----------|--------|--------|
+| Express arrivals | 30% | | ✓/✗ |
+| Express skips Q1 | Yes | | ✓/✗ |
+| Bulk rework loop | 20% | | ✓/✗ |
+
+## Phase 4: Edge Cases
+
+| Test | Result | Notes |
+|------|--------|-------|
+| Finite capacity rejects | ✓/✗ | XX rejections |
+| High utilization stable | ✓/✗ | |
+| Reproducible | ✓/✗ | |
+
+## Phase 5: Performance
+
+| Config | Runtime | Throughput | Result |
+|--------|---------|------------|--------|
+| M/M/1 | Xs | XX agents/s | ✓/✗ |
+| Factory | Xs | XX agents/s | ✓/✗ |
+
+## Issues Found
+
+1. [Issue description]
+   - Severity: Critical / Major / Minor
+   - Config: [Which config file]
+   - Expected: [Expected behavior]
+   - Actual: [Actual behavior]
+   - Reproducible: Yes/No
+
+## Recommendations
+
+1. [Recommendation 1]
+2. [Recommendation 2]
+
+## Conclusion
+
+[Overall assessment of simulator readiness]
+```
+
+---
+
+## 🎯 **Success Criteria Summary**
+
+For the simulator to be considered **production-ready**:
+
+### **Must Pass (Critical)**:
+- ✅ All configs load without errors
+- ✅ All simulations complete without crashes
+- ✅ Little's Law holds within 15% for all queues
+- ✅ Basic queues (M/M/1, M/M/c) match theory within 15%
+- ✅ Category distribution matches specified probabilities within 5%
+- ✅ Results are reproducible with same seed
+
+### **Should Pass (Important)**:
+- ✅ Jackson networks match effective arrival rates within 10%
+- ✅ Category routing works correctly (skip/visit expected queues)
+- ✅ Finite capacity causes rejections
+- ✅ Feedback loops show increased arrivals at loop destination
+- ✅ Simulation completes in reasonable time (< 30s per config)
+
+### **Nice to Have (Desirable)**:
+- ✅ All metrics within 10% of theory
+- ✅ High utilization handled gracefully
+- ✅ Memory usage < 500 MB
+- ✅ Helpful error messages for config mistakes

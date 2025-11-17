@@ -1,0 +1,33 @@
+# ==============================================================================
+# M/M/c Queue: Multiple Servers, Infinite Capacity
+# ==============================================================================
+# Description:
+#   Three parallel servers sharing a common queue.
+#   Useful for modeling service centers with multiple staff.
+#
+# Theoretical Comparison:
+#   Use: MMcQueue(arrival_rate=2.0, service_rate=1.0, c=3)
+#   Expected: ρ = 0.667, Lq ≈ 0.354, Wq ≈ 0.177
+#
+# Notation: M/M/3 with λ=2.0, μ=1.0, c=3
+# ==============================================================================
+
+network:
+  num_queues: 1
+  max_time: 1000.0
+
+queues:
+  - queue_id: 0
+    num_servers: 3  # Three parallel servers
+    capacity: inf
+
+categories:
+  default:
+    arrival_probability: 1.0
+    service_rates: [1.0]
+    routing_matrix:
+      - [0.0]  # Exit after service
+
+arrivals:
+  external_arrival_rate: 2.0
+  arrival_queue: 0

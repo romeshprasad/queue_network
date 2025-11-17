@@ -1,0 +1,47 @@
+# ==============================================================================
+# Advanced: Heavy Traffic Scenario (ρ > 0.9)
+# ==============================================================================
+# Description:
+#   Network operating near capacity to study queueing behavior
+#   under heavy load. Useful for stress testing and capacity planning.
+#
+# Warning:
+#   High utilization leads to:
+#   - Long queues
+#   - High waiting times
+#   - Slower convergence to steady-state
+#   - Requires longer simulation time
+#
+# Use Case:
+#   Capacity planning, bottleneck analysis, peak hour modeling
+# ==============================================================================
+
+network:
+  num_queues: 3
+  max_time: 2000.0  # Longer simulation for stability
+
+queues:
+  - queue_id: 0
+    num_servers: 1
+    capacity: inf
+  
+  - queue_id: 1
+    num_servers: 1
+    capacity: inf
+  
+  - queue_id: 2
+    num_servers: 1
+    capacity: inf
+
+categories:
+  default:
+    arrival_probability: 1.0
+    service_rates: [1.05, 1.1, 1.15]  # Just above arrival rate
+    routing_matrix:
+      - [0.0, 1.0, 0.0]
+      - [0.0, 0.0, 1.0]
+      - [0.0, 0.0, 0.0]
+
+arrivals:
+  external_arrival_rate: 1.0  # ρ ≈ 0.95, 0.91, 0.87
+  arrival_queue: 0

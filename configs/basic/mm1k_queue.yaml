@@ -1,0 +1,33 @@
+# ==============================================================================
+# M/M/1/k Queue: Single Server, Finite Capacity
+# ==============================================================================
+# Description:
+#   Single server with limited waiting room (k=10).
+#   Arrivals are rejected when queue is full (loss system).
+#
+# Theoretical Comparison:
+#   Use: MM1kQueue(arrival_rate=0.9, service_rate=1.0, k=10)
+#   Expected: Some rejections will occur (P_loss > 0)
+#
+# Notation: M/M/1/10 with λ=0.9, μ=1.0, k=10
+# ==============================================================================
+
+network:
+  num_queues: 1
+  max_time: 1000.0
+
+queues:
+  - queue_id: 0
+    num_servers: 1
+    capacity: 10  # Maximum 10 customers can wait
+
+categories:
+  default:
+    arrival_probability: 1.0
+    service_rates: [1.0]
+    routing_matrix:
+      - [0.0]
+
+arrivals:
+  external_arrival_rate: 0.9
+  arrival_queue: 0
