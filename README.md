@@ -458,13 +458,13 @@ The `theoretical_validation.py` file provides analytical solutions for compariso
 
 | Queue Type | Class | Description | Use for Validation? |
 |------------|-------|-------------|---------------------|
-| **M/M/1** | `MM1Queue` | Single server, infinite capacity | ✅ Yes - Reliable |
-| **M/M/1/k** | `MM1kQueue` | Single server, finite capacity k | ✅ Yes - Reliable |
-| **M/M/c** | `MMcQueue` | c servers, infinite capacity | ✅ Yes - Reliable |
-| **M/M/c/k** | `MMckQueue` | c servers, finite capacity k | ✅ Yes - Reliable |
-| **Series** | `series` | Series of M/M/c queues | ✅ Yes - Fixed |
-| **Jackson Network** | `Jacksonnetwork` | Open network, infinite capacity | ✅ Yes - Fixed |
-| **Finite Jackson** | `Jacksonnetworkfinitecapacity` | Open network, finite capacity | ⚠️ Approximate only |
+| **M/M/1** | `MM1Queue` | Single server, infinite capacity |Yes - Reliable |
+| **M/M/1/k** | `MM1kQueue` | Single server, finite capacity k | Yes - Reliable |
+| **M/M/c** | `MMcQueue` | c servers, infinite capacity | Yes - Reliable |
+| **M/M/c/k** | `MMckQueue` | c servers, finite capacity k | Yes - Reliable |
+| **Series** | `series` | Series of M/M/c queues | Yes - Fixed |
+| **Jackson Network** | `Jacksonnetwork` | Open network, infinite capacity | Yes - Fixed |
+| **Finite Jackson** | `Jacksonnetworkfinitecapacity` | Open network, finite capacity | Approximate only |
 
 ### Key Metrics for Comparison
 
@@ -636,7 +636,7 @@ categories:
 
 **Error: Duplicate category names**
 ```yaml
-# ❌ Wrong (YAML only keeps last definition)
+# Wrong (YAML only keeps last definition)
 categories:
   standard:
     arrival_probability: 0.3
@@ -654,7 +654,7 @@ categories:
 **Error: Service rates list wrong length**
 ```yaml
 # For 3 queues:
-# ❌ Wrong
+# Wrong
 service_rates: [1.5, 2.0]  # Only 2 values!
 
 # ✓ Correct
@@ -666,13 +666,6 @@ service_rates: [1.5, 2.0, 2.5]  # 3 values for 3 queues
 ## License
 
 Open source - feel free to use and modify for research or educational purposes.
-
-## Citation
-
-If you use this simulator in your research, please cite:
-```
-[Your citation information here]
-```
 
 ## Contact
 
