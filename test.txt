@@ -1,28 +1,26 @@
-Excellent! Let me create a comprehensive testing plan for your master's student.
-
 ---
 
-## 📋 **Comprehensive Testing Plan for Multi-Class Queueing Network Simulator**
+Comprehensive Testing Plan for Multi-Class Queueing Network Simulator 
 
-### **Testing Overview**
+Testing Overview 
 
 This testing plan ensures the simulator is production-ready by validating:
-1. **Correctness** - Does it produce accurate results?
-2. **Robustness** - Does it handle edge cases?
-3. **Usability** - Is it easy to use?
-4. **Performance** - Does it run efficiently?
+1.  Correctness  - Does it produce accurate results?
+2.  Robustness  - Does it handle edge cases?
+3.  Usability  - Is it easy to use?
+4.  Performance  - Does it run efficiently?
 
 ---
 
-## 🎯 **Phase 1: Basic Functionality Tests**
+Phase 1: Basic Functionality Tests 
 
-### **Test 1.1: Configuration Loading**
+Test 1.1: Configuration Loading 
 
-**Objective**: Verify config files load correctly without errors.
+Objective : Verify config files load correctly without errors.
 
-**Files to Test**: All 16 config files in `configs/`
+Files to Test : All 16 config files in `configs/`
 
-**Procedure**:
+ Procedure :
 ```python
 import yaml
 from config_loader import NetworkConfig
@@ -56,20 +54,20 @@ for config_path in config_files:
         print(f"  ✗ FAIL: {config_path} - {e}")
 ```
 
-**Expected Result**: All 16 configs should load and validate without errors.
+ Expected Result : All 16 configs should load and validate without errors.
 
-**Pass Criteria**:
-- ✅ No YAML parsing errors
-- ✅ No validation errors
-- ✅ Configuration summary prints correctly
+ Pass Criteria :
+- No YAML parsing errors
+- No validation errors
+- Configuration summary prints correctly
 
 ---
 
-### **Test 1.2: Simulation Execution**
+   Test 1.2: Simulation Execution 
 
-**Objective**: Verify all configs can run simulation without crashing.
+ Objective : Verify all configs can run simulation without crashing.
 
-**Procedure**:
+ Procedure :
 ```python
 import numpy as np
 from queueing_network import QueueingNetwork
@@ -93,25 +91,25 @@ for config_path in config_files:
         traceback.print_exc()
 ```
 
-**Expected Result**: All simulations complete without crashes.
+ Expected Result : All simulations complete without crashes.
 
-**Pass Criteria**:
-- ✅ Simulation completes
-- ✅ Returns non-empty `agents_data`
-- ✅ Returns non-empty `stats`
-- ✅ No Python exceptions
+ Pass Criteria :
+-  Simulation completes
+-  Returns non-empty `agents_data`
+-  Returns non-empty `stats`
+-  No Python exceptions
 
 ---
 
-## 🔬 **Phase 2: Correctness Validation**
+Phase 2: Correctness Validation 
 
-### **Test 2.1: Little's Law Verification**
+Test 2.1: Little's Law Verification 
 
-**Objective**: Verify Little's Law (L = λW) holds for all queues.
+ Objective : Verify Little's Law (L = λW) holds for all queues.
 
-**Theory**: For stable queues, L = λ_eff × W should hold within simulation error (~5-15%).
+ Theory : For stable queues, L = λ_eff × W should hold within simulation error (~5-15%).
 
-**Procedure**:
+ Procedure :
 ```python
 def test_littles_law(config_path, tolerance=0.15):
     """Test Little's Law: L = λ * W"""
@@ -149,23 +147,23 @@ for config_path in config_files:
     test_littles_law(config_path)
 ```
 
-**Expected Result**: L ≈ λW within 15% for all queues.
+ Expected Result : L ≈ λW within 15% for all queues.
 
-**Pass Criteria**:
-- ✅ Error < 10%: Excellent
-- ✅ Error 10-15%: Acceptable
-- ⚠️ Error 15-20%: Marginal (increase max_time)
-- ❌ Error > 20%: Bug likely
+ Pass Criteria :
+-  Error < 10%: Excellent
+-  Error 10-15%: Acceptable
+-   Error 15-20%: Marginal (increase max_time)
+-   Error > 20%: Bug likely
 
 ---
 
-### **Test 2.2: Theoretical Comparison (Basic Queues)**
+   Test 2.2: Theoretical Comparison (Basic Queues) 
 
-**Objective**: Compare simulation results with exact analytical solutions.
+ Objective : Compare simulation results with exact analytical solutions.
 
-**Files to Test**: All configs in `configs/basic/`
+ Files to Test : All configs in `configs/basic/`
 
-**Procedure**:
+ Procedure :
 ```python
 from theoretical_validation import MM1Queue, MMcQueue, MM1kQueue, MMckQueue
 
@@ -267,20 +265,20 @@ test_mm1k_queue()
 # test_mmck_queue()  # Similar pattern
 ```
 
-**Expected Result**: Simulation within 5-15% of theory.
+ Expected Result : Simulation within 5-15% of theory.
 
-**Pass Criteria**:
-- ✅ All metrics within 15% of theory
-- ✅ Utilization (ρ) matches expected value
-- ✅ Loss probability > 0 for finite capacity queues
+ Pass Criteria :
+-  All metrics within 15% of theory
+-  Utilization (ρ) matches expected value
+-  Loss probability > 0 for finite capacity queues
 
 ---
 
-### **Test 2.3: Jackson Network Validation**
+   Test 2.3: Jackson Network Validation 
 
-**Objective**: Verify effective arrival rates match theory.
+ Objective : Verify effective arrival rates match theory.
 
-**Procedure**:
+ Procedure :
 ```python
 from theoretical_validation import Jacksonnetwork
 
@@ -336,21 +334,21 @@ def test_jackson_series():
 test_jackson_series()
 ```
 
-**Expected Result**: Effective arrival rates and utilizations match theory.
+ Expected Result : Effective arrival rates and utilizations match theory.
 
-**Pass Criteria**:
-- ✅ λ_eff within 10% of theory for each queue
-- ✅ ρ within 10% of theory for each queue
+ Pass Criteria :
+-  λ_eff within 10% of theory for each queue
+-  ρ within 10% of theory for each queue
 
 ---
 
-## 🧩 **Phase 3: Multi-Class Specific Tests**
+    Phase 3: Multi-Class Specific Tests 
 
-### **Test 3.1: Category Distribution**
+   Test 3.1: Category Distribution 
 
-**Objective**: Verify agents are assigned to categories according to specified probabilities.
+ Objective : Verify agents are assigned to categories according to specified probabilities.
 
-**Procedure**:
+ Procedure :
 ```python
 def test_category_distribution(config_path, expected_probs, tolerance=0.05):
     """Verify category assignment probabilities"""
@@ -405,19 +403,19 @@ test_category_distribution(
 )
 ```
 
-**Expected Result**: Actual distribution within 5% of specified probabilities.
+ Expected Result : Actual distribution within 5% of specified probabilities.
 
-**Pass Criteria**:
-- ✅ Each category within 5% of target probability
-- ✅ All categories sum to 100%
+ Pass Criteria :
+-  Each category within 5% of target probability
+-  All categories sum to 100%
 
 ---
 
-### **Test 3.2: Category-Specific Routing**
+   Test 3.2: Category-Specific Routing 
 
-**Objective**: Verify each category follows its specified routing matrix.
+ Objective : Verify each category follows its specified routing matrix.
 
-**Procedure**:
+ Procedure :
 ```python
 def test_category_routing(config_path, category, expected_routing):
     """
@@ -468,19 +466,19 @@ test_category_routing(
 )
 ```
 
-**Expected Result**: Categories follow specified routing patterns.
+ Expected Result : Categories follow specified routing patterns.
 
-**Pass Criteria**:
-- ✅ Express/VIP categories have 0 arrivals at skipped queues
-- ✅ All categories visit expected queues
+ Pass Criteria :
+-  Express/VIP categories have 0 arrivals at skipped queues
+-  All categories visit expected queues
 
 ---
 
-### **Test 3.3: Feedback Loop Handling**
+   Test 3.3: Feedback Loop Handling 
 
-**Objective**: Verify agents can successfully loop back to previous queues.
+ Objective : Verify agents can successfully loop back to previous queues.
 
-**Procedure**:
+ Procedure :
 ```python
 def test_feedback_loops(config_path, category, loop_info):
     """
@@ -535,19 +533,19 @@ test_feedback_loops(
 )
 ```
 
-**Expected Result**: Queue receiving feedback has more arrivals than external rate.
+ Expected Result : Queue receiving feedback has more arrivals than external rate.
 
-**Pass Criteria**:
-- ✅ Feedback queue arrivals > external arrivals
-- ✅ Loop percentage roughly matches routing probability
+ Pass Criteria :
+-  Feedback queue arrivals > external arrivals
+-  Loop percentage roughly matches routing probability
 
 ---
 
-### **Test 3.4: Service Rate Differences**
+   Test 3.4: Service Rate Differences 
 
-**Objective**: Verify different categories have different average service times.
+ Objective : Verify different categories have different average service times.
 
-**Procedure**:
+ Procedure :
 ```python
 def test_service_rate_differences(config_path):
     """Verify categories have different service characteristics"""
@@ -579,21 +577,21 @@ test_service_rate_differences('configs/multiclass/factory_three_class.yaml')
 test_service_rate_differences('configs/multiclass/hospital_triage.yaml')
 ```
 
-**Expected Result**: Different categories have different service rate configurations.
+ Expected Result : Different categories have different service rate configurations.
 
-**Pass Criteria**:
-- ✅ Express/VIP/Emergency have higher service rates
-- ✅ Bulk/Routine have lower service rates
+ Pass Criteria :
+-  Express/VIP/Emergency have higher service rates
+-  Bulk/Routine have lower service rates
 
 ---
 
-## 🛡️ **Phase 4: Edge Cases and Robustness**
+Phase 4: Edge Cases and Robustness 
 
-### **Test 4.1: Finite Capacity Rejection**
+   Test 4.1: Finite Capacity Rejection 
 
-**Objective**: Verify finite capacity queues reject agents when full.
+ Objective : Verify finite capacity queues reject agents when full.
 
-**Procedure**:
+ Procedure :
 ```python
 def test_finite_capacity_rejection():
     """Test that finite capacity causes rejections"""
@@ -645,20 +643,20 @@ def test_finite_capacity_rejection():
 test_finite_capacity_rejection()
 ```
 
-**Expected Result**: Finite capacity queues show rejections, P_loss > 0.
+ Expected Result : Finite capacity queues show rejections, P_loss > 0.
 
-**Pass Criteria**:
-- ✅ Rejections occur when capacity is finite
-- ✅ P_loss calculated correctly
-- ✅ rejected_agents list populated
+ Pass Criteria :
+-  Rejections occur when capacity is finite
+-  P_loss calculated correctly
+-  rejected_agents list populated
 
 ---
 
-### **Test 4.2: High Utilization Stability**
+   Test 4.2: High Utilization Stability 
 
-**Objective**: Verify simulator handles high utilization (ρ ≈ 0.95) without issues.
+ Objective : Verify simulator handles high utilization (ρ ≈ 0.95) without issues.
 
-**Procedure**:
+ Procedure :
 ```python
 def test_high_utilization():
     """Test simulator stability under heavy traffic"""
@@ -695,20 +693,20 @@ def test_high_utilization():
 test_high_utilization()
 ```
 
-**Expected Result**: Simulation completes, but queues build up significantly.
+ Expected Result : Simulation completes, but queues build up significantly.
 
-**Pass Criteria**:
-- ✅ Simulation doesn't crash
-- ✅ ρ values close to 0.9-0.95
-- ✅ L and Wq are large (expected for high utilization)
+ Pass Criteria :
+-  Simulation doesn't crash
+-  ρ values close to 0.9-0.95
+-  L and Wq are large (expected for high utilization)
 
 ---
 
-### **Test 4.3: Empty Queue Handling**
+   Test 4.3: Empty Queue Handling 
 
-**Objective**: Verify simulator handles queues with no traffic gracefully.
+ Objective : Verify simulator handles queues with no traffic gracefully.
 
-**Procedure**:
+ Procedure :
 ```python
 def test_empty_queue_handling():
     """Test queues that receive no traffic"""
@@ -742,19 +740,19 @@ def test_empty_queue_handling():
 test_empty_queue_handling()
 ```
 
-**Expected Result**: Queues with no traffic still have statistics (with 0 values).
+ Expected Result : Queues with no traffic still have statistics (with 0 values).
 
-**Pass Criteria**:
-- ✅ No crashes when queue has 0 arrivals
-- ✅ Statistics still generated (with 0 or N/A values)
+ Pass Criteria :
+-  No crashes when queue has 0 arrivals
+-  Statistics still generated (with 0 or N/A values)
 
 ---
 
-### **Test 4.4: Random Seed Reproducibility**
+   Test 4.4: Random Seed Reproducibility 
 
-**Objective**: Verify same seed produces identical results.
+ Objective : Verify same seed produces identical results.
 
-**Procedure**:
+ Procedure :
 ```python
 def test_reproducibility(config_path, seed=42):
     """Test that same seed gives same results"""
@@ -790,22 +788,22 @@ test_reproducibility('configs/basic/mm1_queue.yaml')
 test_reproducibility('configs/multiclass/factory_three_class.yaml')
 ```
 
-**Expected Result**: Identical results with same seed.
+ Expected Result : Identical results with same seed.
 
-**Pass Criteria**:
-- ✅ All metrics identical between runs
-- ✅ Same number of agents served
-- ✅ Same queue lengths and waiting times
+ Pass Criteria :
+-  All metrics identical between runs
+-  Same number of agents served
+-  Same queue lengths and waiting times
 
 ---
 
-## 📊 **Phase 5: Performance Testing**
+Phase 5: Performance Testing 
 
-### **Test 5.1: Simulation Speed**
+   Test 5.1: Simulation Speed 
 
-**Objective**: Verify simulator runs in reasonable time.
+ Objective : Verify simulator runs in reasonable time.
 
-**Procedure**:
+ Procedure :
 ```python
 import time
 
@@ -846,21 +844,21 @@ for config, runtime in sorted(runtimes.items(), key=lambda x: x[1], reverse=True
     print(f"{config:<50} {runtime:<10.2f}")
 ```
 
-**Expected Result**: Most simulations < 5 seconds, none > 30 seconds.
+ Expected Result : Most simulations < 5 seconds, none > 30 seconds.
 
-**Pass Criteria**:
-- ✅ Basic configs: < 2 seconds
-- ✅ Network configs: < 5 seconds
-- ✅ Multi-class configs: < 10 seconds
-- ⚠️ Heavy traffic: May take longer (acceptable)
+ Pass Criteria :
+-  Basic configs: < 2 seconds
+-  Network configs: < 5 seconds
+-  Multi-class configs: < 10 seconds
+-   Heavy traffic: May take longer (acceptable)
 
 ---
 
-### **Test 5.2: Memory Usage**
+   Test 5.2: Memory Usage 
 
-**Objective**: Verify simulator doesn't leak memory or use excessive RAM.
+ Objective : Verify simulator doesn't leak memory or use excessive RAM.
 
-**Procedure**:
+ Procedure :
 ```python
 import psutil
 import os
@@ -895,21 +893,21 @@ test_memory_usage('configs/advanced/heavy_traffic.yaml')
 test_memory_usage('configs/multiclass/hospital_triage.yaml')
 ```
 
-**Expected Result**: < 500 MB memory usage per simulation.
+ Expected Result : < 500 MB memory usage per simulation.
 
-**Pass Criteria**:
-- ✅ Memory usage < 500 MB
-- ✅ No memory leaks (memory released after simulation)
+ Pass Criteria :
+-  Memory usage < 500 MB
+-  No memory leaks (memory released after simulation)
 
 ---
 
-## 📝 **Phase 6: Usability Testing**
+Phase 6: Usability Testing 
 
-### **Test 6.1: Error Messages**
+   Test 6.1: Error Messages 
 
-**Objective**: Verify helpful error messages for common mistakes.
+ Objective : Verify helpful error messages for common mistakes.
 
-**Procedure**:
+ Procedure :
 ```python
 def test_error_messages():
     """Test that config errors give helpful messages"""
@@ -982,20 +980,20 @@ arrivals:
 test_error_messages()
 ```
 
-**Expected Result**: Clear, actionable error messages.
+ Expected Result : Clear, actionable error messages.
 
-**Pass Criteria**:
-- ✅ Error messages indicate what's wrong
-- ✅ Error messages suggest how to fix
-- ✅ No cryptic Python tracebacks for user errors
+ Pass Criteria :
+-  Error messages indicate what's wrong
+-  Error messages suggest how to fix
+-  No cryptic Python tracebacks for user errors
 
 ---
 
-### **Test 6.2: Documentation Accuracy**
+   Test 6.2: Documentation Accuracy 
 
-**Objective**: Verify README examples work as documented.
+ Objective : Verify README examples work as documented.
 
-**Procedure**:
+ Procedure :
 ```python
 def test_readme_examples():
     """Test that README examples actually work"""
@@ -1034,16 +1032,16 @@ def test_readme_examples():
 test_readme_examples()
 ```
 
-**Expected Result**: All README examples run without errors.
+ Expected Result : All README examples run without errors.
 
-**Pass Criteria**:
-- ✅ Quick start example works
-- ✅ All code snippets in README are syntactically correct
-- ✅ Expected outputs match actual outputs
+ Pass Criteria :
+-  Quick start example works
+-  All code snippets in README are syntactically correct
+-  Expected outputs match actual outputs
 
 ---
 
-## 📋 **Master Testing Script**
+  📋  Master Testing Script 
 
 Create `run_all_tests.py`:
 
@@ -1070,7 +1068,7 @@ class TestSuite:
         }
         self.test_details = []
     
-    def run_test(self, test_name, test_func, *args, **kwargs):
+    def run_test(self, test_name, test_func, *args,  kwargs):
         """Run a single test and record results"""
         print(f"\n{'='*70}")
         print(f"Running: {test_name}")
@@ -1078,7 +1076,7 @@ class TestSuite:
         
         try:
             start_time = time.time()
-            result = test_func(*args, **kwargs)
+            result = test_func(*args,  kwargs)
             end_time = time.time()
             
             runtime = end_time - start_time
@@ -1207,18 +1205,18 @@ if __name__ == "__main__":
 
 ---
 
-## 📊 **Deliverable: Test Report Template**
+Deliverable: Test Report Template 
 
 Your master's student should fill out this report:
 
 ```markdown
 # Queueing Network Simulator - Test Report
 
-**Tester**: [Student Name]
-**Date**: [Test Date]
-**Version**: [Simulator Version/Commit Hash]
+ Tester : [Student Name]
+ Date : [Test Date]
+ Version : [Simulator Version/Commit Hash]
 
-## Executive Summary
+  Executive Summary
 
 - Total Tests Run: XX
 - Tests Passed: XX (XX%)
@@ -1227,14 +1225,14 @@ Your master's student should fill out this report:
 
 Overall Assessment: [PASS / FAIL / NEEDS WORK]
 
-## Phase 1: Basic Functionality
+  Phase 1: Basic Functionality
 
 | Test | Result | Notes |
 |------|--------|-------|
 | Config Loading | ✓/✗ | |
 | Simulation Execution | ✓/✗ | |
 
-## Phase 2: Correctness
+  Phase 2: Correctness
 
 | Test | Sim Value | Theory Value | Error | Result |
 |------|-----------|--------------|-------|--------|
@@ -1243,7 +1241,7 @@ Overall Assessment: [PASS / FAIL / NEEDS WORK]
 | M/M/c - ρ | | | | ✓/✗ |
 | Jackson λ_eff | | | | ✓/✗ |
 
-## Phase 3: Multi-Class
+  Phase 3: Multi-Class
 
 | Test | Expected | Actual | Result |
 |------|----------|--------|--------|
@@ -1251,7 +1249,7 @@ Overall Assessment: [PASS / FAIL / NEEDS WORK]
 | Express skips Q1 | Yes | | ✓/✗ |
 | Bulk rework loop | 20% | | ✓/✗ |
 
-## Phase 4: Edge Cases
+  Phase 4: Edge Cases
 
 | Test | Result | Notes |
 |------|--------|-------|
@@ -1259,14 +1257,14 @@ Overall Assessment: [PASS / FAIL / NEEDS WORK]
 | High utilization stable | ✓/✗ | |
 | Reproducible | ✓/✗ | |
 
-## Phase 5: Performance
+  Phase 5: Performance
 
 | Config | Runtime | Throughput | Result |
 |--------|---------|------------|--------|
 | M/M/1 | Xs | XX agents/s | ✓/✗ |
 | Factory | Xs | XX agents/s | ✓/✗ |
 
-## Issues Found
+  Issues Found
 
 1. [Issue description]
    - Severity: Critical / Major / Minor
@@ -1275,39 +1273,39 @@ Overall Assessment: [PASS / FAIL / NEEDS WORK]
    - Actual: [Actual behavior]
    - Reproducible: Yes/No
 
-## Recommendations
+  Recommendations
 
 1. [Recommendation 1]
 2. [Recommendation 2]
 
-## Conclusion
+  Conclusion
 
 [Overall assessment of simulator readiness]
 ```
 
 ---
 
-## 🎯 **Success Criteria Summary**
+Success Criteria Summary 
 
-For the simulator to be considered **production-ready**:
+For the simulator to be considered  production-ready :
 
-### **Must Pass (Critical)**:
-- ✅ All configs load without errors
-- ✅ All simulations complete without crashes
-- ✅ Little's Law holds within 15% for all queues
-- ✅ Basic queues (M/M/1, M/M/c) match theory within 15%
-- ✅ Category distribution matches specified probabilities within 5%
-- ✅ Results are reproducible with same seed
+   Must Pass (Critical) :
+-  All configs load without errors
+-  All simulations complete without crashes
+-  Little's Law holds within 15% for all queues
+-  Basic queues (M/M/1, M/M/c) match theory within 15%
+-  Category distribution matches specified probabilities within 5%
+-  Results are reproducible with same seed
 
-### **Should Pass (Important)**:
-- ✅ Jackson networks match effective arrival rates within 10%
-- ✅ Category routing works correctly (skip/visit expected queues)
-- ✅ Finite capacity causes rejections
-- ✅ Feedback loops show increased arrivals at loop destination
-- ✅ Simulation completes in reasonable time (< 30s per config)
+   Should Pass (Important) :
+-  Jackson networks match effective arrival rates within 10%
+-  Category routing works correctly (skip/visit expected queues)
+-  Finite capacity causes rejections
+-  Feedback loops show increased arrivals at loop destination
+-  Simulation completes in reasonable time (< 30s per config)
 
-### **Nice to Have (Desirable)**:
-- ✅ All metrics within 10% of theory
-- ✅ High utilization handled gracefully
-- ✅ Memory usage < 500 MB
-- ✅ Helpful error messages for config mistakes
+   Nice to Have (Desirable) :
+-  All metrics within 10% of theory
+-  High utilization handled gracefully
+-  Memory usage < 500 MB
+-  Helpful error messages for config mistakes
