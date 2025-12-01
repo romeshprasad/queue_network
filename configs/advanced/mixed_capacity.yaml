@@ -1,0 +1,46 @@
+# ==============================================================================
+# Advanced: Mixed Capacity Constraints
+# ==============================================================================
+# Description:
+#   Network with mix of finite and infinite capacity queues.
+#   Demonstrates interaction between different constraint types.
+#
+# Configuration:
+#   - Q0: Finite (cap=10) - Entrance bottleneck
+#   - Q1: Infinite - Internal processing
+#   - Q2: Finite (cap=5) - Exit bottleneck
+#
+# Use Case:
+#   Systems with constrained entry/exit but flexible internal capacity
+#   (e.g., airport check-in → concourse → boarding gate)
+# ==============================================================================
+
+network:
+  num_queues: 3
+  max_time: 1000.0
+
+queues:
+  - queue_id: 0
+    num_servers: 2
+    capacity: 10  # Limited entrance capacity
+  
+  - queue_id: 1
+    num_servers: 3
+    capacity: inf  # Flexible internal processing
+  
+  - queue_id: 2
+    num_servers: 1
+    capacity: 5   # Bottleneck at exit
+
+categories:
+  default:
+    arrival_probability: 1.0
+    service_rates: [2.0, 2.5, 1.5]
+    routing_matrix:
+      - [0.0, 1.0, 0.0]
+      - [0.0, 0.0, 1.0]
+      - [0.0, 0.0, 0.0]
+
+arrivals:
+  external_arrival_rate: 3.0
+  arrival_queue: 0

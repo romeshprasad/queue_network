@@ -1,0 +1,53 @@
+# ==============================================================================
+# Priority Fast-Track System: VIP vs Regular Customers
+# ==============================================================================
+# Description:
+#   Two-tier service system where VIP customers skip intermediate processing.
+#   Common in airports, theme parks, and customer service centers.
+#
+# Real-World Analogy:
+#   Airport security with TSA PreCheck:
+#   - VIP (30%): PreCheck lane, skip detailed screening
+#   - Regular (70%): Standard security process through all checkpoints
+#
+# Network Flow:
+#   Q0: Initial check → Q1: Detailed screening → Q2: Final clearance
+# ==============================================================================
+
+network:
+  num_queues: 3
+  max_time: 1000.0
+
+queues:
+  - queue_id: 0  # Initial check-in
+    num_servers: 2
+    capacity: inf
+  
+  - queue_id: 1  # Detailed screening
+    num_servers: 3
+    capacity: inf
+  
+  - queue_id: 2  # Final clearance
+    num_servers: 2
+    capacity: inf
+
+categories:
+  vip:
+    arrival_probability: 0.3
+    service_rates: [3.0, 4.0, 3.5]  # Fast-track service
+    routing_matrix:
+      - [0.0, 0.0, 1.0]  # Skip detailed screening (Q1)
+      - [0.0, 0.0, 1.0]  # Shouldn't reach Q1, but route to Q2 if so
+      - [0.0, 0.0, 0.0]  # Exit
+  
+  regular:
+    arrival_probability: 0.7
+    service_rates: [2.0, 2.5, 2.5]  # Standard service
+    routing_matrix:
+      - [0.0, 1.0, 0.0]  # Go through all checkpoints
+      - [0.0, 0.0, 1.0]
+      - [0.0, 0.0, 0.0]
+
+arrivals:
+  external_arrival_rate: 5.0
+  arrival_queue: 0

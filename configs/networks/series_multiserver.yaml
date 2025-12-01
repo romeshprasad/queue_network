@@ -1,0 +1,46 @@
+# ==============================================================================
+# Series Network with Multiple Servers per Queue
+# ==============================================================================
+# Description:
+#   Three queues in series where each queue has multiple parallel servers.
+#   Demonstrates M/M/c queues in a network context.
+#
+# Theoretical Comparison:
+#   Use: series(arrival_rate=3.0, service_rate=[1.5,1.5,2.0],
+#              num_servers=[2,3,2])
+#   Expected: All utilizations < 1 for stability
+#             ρ0=1.0, ρ1=0.667, ρ2=0.75
+#
+# Use Case:
+#   Manufacturing line with workstations of varying capacity
+# ==============================================================================
+
+network:
+  num_queues: 3
+  max_time: 1000.0
+
+queues:
+  - queue_id: 0
+    num_servers: 2  # Two workers at first station
+    capacity: inf
+  
+  - queue_id: 1
+    num_servers: 3  # Three workers at second station
+    capacity: inf
+  
+  - queue_id: 2
+    num_servers: 2  # Two workers at final station
+    capacity: inf
+
+categories:
+  default:
+    arrival_probability: 1.0
+    service_rates: [1.5, 1.5, 2.0]
+    routing_matrix:
+      - [0.0, 1.0, 0.0]  # Q0 → Q1
+      - [0.0, 0.0, 1.0]  # Q1 → Q2
+      - [0.0, 0.0, 0.0]  # Q2 → Exit
+
+arrivals:
+  external_arrival_rate: 3.0
+  arrival_queue: 0

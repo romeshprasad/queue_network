@@ -1,0 +1,61 @@
+# ==============================================================================
+# Hospital Emergency Department: Multi-Level Triage System
+# ==============================================================================
+# Description:
+#   Emergency department with three patient acuity levels:
+#   - Emergency (15%): Life-threatening, immediate care, fast service
+#   - Urgent (35%): Serious but stable, moderate priority
+#   - Routine (50%): Minor issues, standard flow
+#
+# Real-World Analogy:
+#   Emergency room with ESI (Emergency Severity Index) triage system
+#
+# Network Flow:
+#   Q0: Triage → Q1: Treatment → Q2: Discharge/Observation
+# ==============================================================================
+
+network:
+  num_queues: 3
+  max_time: 1000.0
+
+queues:
+  - queue_id: 0  # Triage/Assessment
+    num_servers: 2
+    capacity: inf
+  
+  - queue_id: 1  # Treatment rooms
+    num_servers: 4
+    capacity: inf
+  
+  - queue_id: 2  # Discharge/Observation
+    num_servers: 2
+    capacity: inf
+
+categories:
+  emergency:
+    arrival_probability: 0.15
+    service_rates: [5.0, 4.0, 3.0]  # Rapid triage and treatment
+    routing_matrix:
+      - [0.0, 1.0, 0.0]  # Triage → Treatment immediately
+      - [0.0, 0.0, 1.0]  # Treatment → Discharge
+      - [0.0, 0.0, 0.0]  # Exit
+  
+  urgent:
+    arrival_probability: 0.35
+    service_rates: [3.0, 2.5, 2.0]  # Moderate service times
+    routing_matrix:
+      - [0.0, 1.0, 0.0]
+      - [0.0, 0.0, 1.0]
+      - [0.0, 0.0, 0.0]
+  
+  routine:
+    arrival_probability: 0.50
+    service_rates: [2.0, 1.5, 1.5]  # Slower, less urgent care
+    routing_matrix:
+      - [0.0, 1.0, 0.0]
+      - [0.0, 0.0, 1.0]
+      - [0.0, 0.0, 0.0]
+
+arrivals:
+  external_arrival_rate: 10.0  # 10 patients per time unit
+  arrival_queue: 0

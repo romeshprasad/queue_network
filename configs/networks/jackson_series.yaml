@@ -1,0 +1,45 @@
+# ==============================================================================
+# Jackson Network: Series (Tandem) Configuration
+# ==============================================================================
+# Description:
+#   Three queues in series where customers visit each queue in order.
+#   Classic example of a Jackson network with deterministic routing.
+#
+# Theoretical Comparison:
+#   Use: Jacksonnetwork(arrival_rate=1.0, service_rate=[1.5,2.0,2.5],
+#                       num_servers=[1,1,1], prob_matrix=...)
+#   Expected: Effective arrival rates = [1.0, 1.0, 1.0]
+#             Utilizations: ρ0=0.667, ρ1=0.5, ρ2=0.4
+#
+# Notation: Three M/M/1 queues in tandem
+# ==============================================================================
+
+network:
+  num_queues: 3
+  max_time: 1000.0
+
+queues:
+  - queue_id: 0
+    num_servers: 1
+    capacity: inf
+  
+  - queue_id: 1
+    num_servers: 1
+    capacity: inf
+  
+  - queue_id: 2
+    num_servers: 1
+    capacity: inf
+
+categories:
+  default:
+    arrival_probability: 1.0
+    service_rates: [1.5, 2.0, 2.5]
+    routing_matrix:
+      - [0.0, 1.0, 0.0]  # Q0 → Q1 (100%)
+      - [0.0, 0.0, 1.0]  # Q1 → Q2 (100%)
+      - [0.0, 0.0, 0.0]  # Q2 → Exit
+
+arrivals:
+  external_arrival_rate: 1.0
+  arrival_queue: 0

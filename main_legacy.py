@@ -464,10 +464,8 @@ def example_series_multiserver():
     # Display results
     print_statistics(stats)
     print("\nTheoretical Values (use theoretical_validation.py):")
-    print("  series(arrival_rate=3.0, service_rate=[1.5,1.5,2.0],")
-    print("         num_servers=[2,3,2])")
-
-    statistics_to_csv("Multi-Server Series", stats, output_file)
+    print("\nseries(arrival_rate=3.0, service_rate=[1.5,1.5,2.0],")
+    print("\nnum_servers=[2,3,2])")
     
     plot_queue_lengths(agents_data, "Multi-Server Series - Queue Lengths")
     
@@ -753,11 +751,11 @@ if __name__ == "__main__":
     # input("\nPress enter to continue. \n")
     
     # Single Queue Examples (Direct M/M/* mapping)
-    network1, data1 = example_mm1_queue()           # M/M/1
-    input("\nPress enter to continue. \n")
-    network2, data2 = example_mmc_queue()           # M/M/c
-    network3, data3 = example_mm1k_queue()          # M/M/1/k
-    network4, data4 = example_mmck_queue()          # M/M/c/k
+    # Please comment out if you wish to run simple models
+    # network1, data1 = example_mm1_queue()           # M/M/1
+    # network2, data2 = example_mmc_queue()           # M/M/c
+    # network3, data3 = example_mm1k_queue()          # M/M/1/k
+    # network4, data4 = example_mmck_queue()          # M/M/c/k
     
     # Network Examples (Jackson networks)
     network5, data5 = example_jackson_series()      # Series Jackson

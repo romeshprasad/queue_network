@@ -1,0 +1,48 @@
+# ==============================================================================
+# Finite Capacity Network with Rejection
+# ==============================================================================
+# Description:
+#   Three queues in series with limited buffer space at each stage.
+#   Customers are rejected (lost) when a queue is full.
+#   This is a loss system, NOT a blocking system.
+#
+# Theoretical Note:
+#   Use: Jacksonnetworkfinitecapacity(...) [APPROXIMATE ONLY]
+#   Theory does NOT account for rejection cascade effects properly.
+#   Simulation is the best approach for this scenario.
+#
+# Features:
+#   - Increasing capacity downstream (5 → 10 → 15)
+#   - Rejections expected at all stages
+#   - Loss probability tracking
+# ==============================================================================
+
+network:
+  num_queues: 3
+  max_time: 1000.0
+
+queues:
+  - queue_id: 0
+    num_servers: 1
+    capacity: 5   # Small buffer at first stage
+  
+  - queue_id: 1
+    num_servers: 1
+    capacity: 10  # Medium buffer at second stage
+  
+  - queue_id: 2
+    num_servers: 1
+    capacity: 15  # Larger buffer at final stage
+
+categories:
+  default:
+    arrival_probability: 1.0
+    service_rates: [1.5, 1.5, 2.0]
+    routing_matrix:
+      - [0.0, 1.0, 0.0]
+      - [0.0, 0.0, 1.0]
+      - [0.0, 0.0, 0.0]
+
+arrivals:
+  external_arrival_rate: 1.0
+  arrival_queue: 0

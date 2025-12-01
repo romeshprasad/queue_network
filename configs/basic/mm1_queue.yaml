@@ -1,0 +1,33 @@
+# ==============================================================================
+# M/M/1 Queue: Single Server, Infinite Capacity
+# ==============================================================================
+# Description:
+#   The simplest queueing system with one server and no capacity limit.
+#   Arrivals follow Poisson process, service times are exponential.
+#
+# Theoretical Comparison:
+#   Use: MM1Queue(arrival_rate=0.8, service_rate=1.0)
+#   Expected: Lq ≈ 3.2, Wq ≈ 4.0, L ≈ 4.0, W ≈ 5.0, ρ = 0.8
+#
+# Notation: M/M/1 with λ=0.8, μ=1.0, ρ=0.8
+# ==============================================================================
+
+network:
+  num_queues: 1
+  max_time: 1000.0
+
+queues:
+  - queue_id: 0
+    num_servers: 1
+    capacity: inf
+
+categories:
+  default:
+    arrival_probability: 1.0
+    service_rates: [1.0]
+    routing_matrix:
+      - [0.0]  # Exit system after service
+
+arrivals:
+  external_arrival_rate: 0.8
+  arrival_queue: 0

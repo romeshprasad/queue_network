@@ -1,0 +1,45 @@
+# ==============================================================================
+# Advanced: Network with Feedback Loops
+# ==============================================================================
+# Description:
+#   Complex network where customers can loop back to earlier stages.
+#   Demonstrates cyclic routing patterns.
+#
+# Features:
+#   - Q1 can send 30% back to Q0 (rework/retry)
+#   - Q2 can send 10% back to Q1 (quality check failure)
+#   - Potential for customers to visit queues multiple times
+#
+# Use Case:
+#   Software development: coding → testing → review (with iterations)
+# ==============================================================================
+
+network:
+  num_queues: 3
+  max_time: 1000.0
+
+queues:
+  - queue_id: 0
+    num_servers: 2
+    capacity: inf
+  
+  - queue_id: 1
+    num_servers: 2
+    capacity: inf
+  
+  - queue_id: 2
+    num_servers: 1
+    capacity: inf
+
+categories:
+  default:
+    arrival_probability: 1.0
+    service_rates: [2.0, 1.5, 1.0]
+    routing_matrix:
+      - [0.0, 1.0, 0.0]      # Q0 → Q1 (100%)
+      - [0.3, 0.0, 0.7]      # Q1 → Q0 (30% rework) or Q2 (70%)
+      - [0.0, 0.1, 0.0]      # Q2 → Q1 (10% return) or exit (90%)
+
+arrivals:
+  external_arrival_rate: 1.5
+  arrival_queue: 0

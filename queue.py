@@ -109,8 +109,65 @@ class Queue:
         """
         return np.random.exponential(1.0 / self.service_rate)
     
+    def get_current_queue_length(self):
+        """
+        Get current number of agents waiting in queue.
+        
+        Returns
+        -------
+        int
+            Number of agents in waiting queue (not including those in service)
+        """
+        return len(self.waiting_queue)
+    
+    def get_current_system_length(self):
+        """
+        Get current total number of agents in the system.
+        
+        Returns
+        -------
+        int
+            Total number of agents (waiting + in service)
+        """
+        busy_servers = sum(1 for s in self.servers if s.is_busy)
+        return len(self.waiting_queue) + busy_servers
+    
+    def get_num_busy_servers(self):
+        """
+        Get current number of busy servers.
+        
+        Returns
+        -------
+        int
+            Number of servers currently serving agents
+        """
+        return sum(1 for s in self.servers if s.is_busy)
+    
     def __repr__(self):
         """String representation for debugging."""
         busy_servers = sum(1 for s in self.servers if s.is_busy)
         return (f"Queue(id={self.queue_id}, servers={busy_servers}/{self.num_servers}, "
                 f"waiting={len(self.waiting_queue)}, capacity={self.capacity})")
+    
+    def generate_service_time_for_category(self, category, category_service_rates):
+        """
+        Generate exponentially distributed service time for a specific category.
+        
+        Parameters
+        ----------
+        category : str
+            Category name
+        category_service_rates : dict
+            Dictionary mapping category names to service rate lists
+            
+        Returns
+        -------
+        float
+            Service time
+        """
+        if category not in category_service_rates:
+            # Fallback to base service rate
+            return self.generate_service_time()
+        
+        service_rate = category_service_rates[category][self.queue_id]
+        return np.random.exponential(1.0 / service_rate)

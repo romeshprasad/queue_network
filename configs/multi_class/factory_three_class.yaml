@@ -1,0 +1,62 @@
+# ==============================================================================
+# Multi-Class Factory: Express, Standard, and Bulk Orders
+# ==============================================================================
+# Description:
+#   Manufacturing facility handling three types of orders:
+#   - Express (30%): Fast service, skip middle inspection (Q1)
+#   - Standard (50%): Normal processing through all stations
+#   - Bulk (20%): Slower service, 20% rework rate at Q1
+#
+# Real-World Analogy:
+#   Automotive parts manufacturer with priority orders, standard production,
+#   and large batch orders that may require rework.
+#
+# Network Flow:
+#   Q0: Receiving/Prep → Q1: Inspection → Q2: Packaging/Shipping
+# ==============================================================================
+
+network:
+  num_queues: 3
+  max_time: 1000.0
+
+queues:
+  - queue_id: 0  # Receiving and preparation
+    num_servers: 2
+    capacity: inf
+  
+  - queue_id: 1  # Quality inspection
+    num_servers: 3
+    capacity: inf
+  
+  - queue_id: 2  # Packaging and shipping
+    num_servers: 2
+    capacity: inf
+
+categories:
+  express:
+    arrival_probability: 0.3
+    service_rates: [2.0, 2.5, 3.0]  # Faster service at all stages
+    routing_matrix:
+      - [0.0, 0.0, 1.0]  # Skip inspection (Q1), go directly to packaging
+      - [0.0, 0.0, 1.0]  # If somehow at Q1, proceed to Q2
+      - [0.0, 0.0, 0.0]  # Exit after packaging
+  
+  standard:
+    arrival_probability: 0.5
+    service_rates: [1.5, 2.0, 2.5]  # Normal service rates
+    routing_matrix:
+      - [0.0, 1.0, 0.0]  # Normal flow through all stations
+      - [0.0, 0.0, 1.0]
+      - [0.0, 0.0, 0.0]
+  
+  bulk:
+    arrival_probability: 0.2
+    service_rates: [1.2, 1.5, 2.0]  # Slower service (large batches)
+    routing_matrix:
+      - [0.0, 1.0, 0.0]
+      - [0.2, 0.0, 0.8]  # 20% fail inspection, return to Q0 for rework
+      - [0.0, 0.0, 0.0]
+
+arrivals:
+  external_arrival_rate: 3.0
+  arrival_queue: 0
