@@ -318,13 +318,21 @@ class QueueingNetwork:
                 service_times = queue_data[:, 3] - queue_data[:, 2]
                 system_times = queue_data[:, 3] - queue_data[:, 1]
                 queue_lengths = queue_data[:, 6]
+
+                # Time based average queue length
+                # Using Little's Law,
+                # Average Queue Length = Arrival Rate * Average Wait Time
+                average_wait_time = np.mean(waiting_times)
+                average_queue_length = average_wait_time * self.arrival_rate
+
+                #TODO Make sure average queue length is time based
                 
                 stats[queue_id] = {
                     'num_served': len(queue_data),
-                    'avg_waiting_time': np.mean(waiting_times),
+                    'avg_waiting_time': average_wait_time,
                     'avg_service_time': np.mean(service_times),
                     'avg_system_time': np.mean(system_times),
-                    'avg_queue_length': np.mean(queue_lengths),
+                    'avg_queue_length': average_queue_length,
                     'max_queue_length': np.max(queue_lengths)
                 }
         

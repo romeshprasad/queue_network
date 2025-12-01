@@ -4,6 +4,113 @@ from visualization import plot_queue_lengths, plot_waiting_times, print_statisti
 
 output_file = "output/example_outputs.csv"
 
+def example_large_queue():
+    """
+    Example 2: M/M/c Queue
+    Multiple servers, infinite capacity, FIFO
+    Theoretical comparison available
+    """
+    print("\n" + "="*70)
+    print("EXAMPLE 2: M/M/c Queue")
+    print("="*70)
+    print("Configuration: 3 servers, infinite capacity")
+    print("Notation: M/M/3 with λ=2.0, μ=1.0, ρ=0.667")
+    
+    # Network parameters
+    arrival_rate = 4
+    service_rates = [1, 1, 1, 1, 1]
+    num_servers = [5, 2, 2, 3, 5]  # 3 parallel servers
+    max_time = 10000.0
+    
+    prob_matrix = [
+        [0, 0.5, 0.5, 0, 0],
+        [0, 0, 0, 0.9, 0.1],
+        [0, 0, 0, 0.8, 0.2],
+        [0, 0, 0, 0, 1],
+        [0, 0, 0, 0, 0]
+        ]
+    capacities = None
+    
+    # Run simulation
+    np.random.seed(42)
+    network = QueueingNetwork(
+        arrival_rate=arrival_rate,
+        service_rates=service_rates,
+        num_servers=num_servers,
+        prob_matrix=prob_matrix,
+        max_time=max_time,
+        capacities=capacities
+    )
+    
+    agents_data = network.simulate()
+    stats = network.get_statistics()
+    
+    # Display results
+    print_statistics(stats)
+    print("\nTheoretical Values (use theoretical_validation.py):")
+    print("  MMcQueue(arrival_rate=2.0, service_rate=1.0, c=3)")
+
+    statistics_to_csv("large_test", stats, output_file)
+    
+    plot_queue_lengths(agents_data, "M/M/3 Queue - Queue Length Over Time")
+    
+    return network, agents_data
+
+
+def rite_mvp1_queue():
+    """
+    Feeder Robot > Conveyor > Robot1
+    Robot 1: 2/3 to exit, 1/3 to Engraver > exit
+    """
+    print("\n" + "="*70)
+    print("Rite-Solutions MVP1 Queue")
+    print("="*70)
+    print("Configuration: Single server, infinite capacity")
+    print("Notation: M/M/1 with λ=0.8, μ=1.0, ρ=0.8")
+
+    # Network parameters
+    arrival_rate = 1
+    service_rates = [1, 1, 1, 0.2, 1]
+    num_servers = [1, 1, 1, 1, 3]  # 3 parallel servers
+    max_time = 10000.0
+    
+    prob_matrix = [
+        [0, 1, 0, 0, 0],    # Feeder Robot
+        [0, 0, 1, 0, 0],    # Conveyor
+        [0, 0, 0, 0.25, 0.75],  # Robot1
+        [0, 0, 1, 0, 0],    # Engraver
+        [0, 0, 0, 0, 0]     # Exit
+        ]
+    capacities = [10, 3, 1, 1, float('inf')]
+
+    # Run simulation
+    np.random.seed(42)
+    network = QueueingNetwork(
+        arrival_rate=arrival_rate,
+        service_rates=service_rates,
+        num_servers=num_servers,
+        prob_matrix=prob_matrix,
+        max_time=max_time,
+        capacities=capacities
+    )
+    
+    agents_data = network.simulate()
+    stats = network.get_statistics()
+    
+    # Display results
+    print_statistics(stats)
+    print("\nTheoretical Values (use theoretical_validation.py):")
+    print("  MM1Queue(arrival_rate=0.8, service_rate=1.0)")
+    print("  Expected Lq ≈ 3.2, Wq ≈ 4.0")
+
+    statistics_to_csv("M/M/1", stats, output_file)
+    
+    plot_queue_lengths(agents_data, "MVP1 Queue - Queue Length Over Time")
+    
+    return network, agents_data
+
+
+
 def example_mm1_queue():
     """
     Example 1: M/M/1 Queue
@@ -638,9 +745,16 @@ if __name__ == "__main__":
     print("="*70)
 
     input("\nPress enter to continue. \n")
+
+    network0, data0 = rite_mvp1_queue()
+    input("\nPress enter to continue. \n")
+
+    # network0, data0 = example_large_queue()
+    # input("\nPress enter to continue. \n")
     
     # Single Queue Examples (Direct M/M/* mapping)
     network1, data1 = example_mm1_queue()           # M/M/1
+    input("\nPress enter to continue. \n")
     network2, data2 = example_mmc_queue()           # M/M/c
     network3, data3 = example_mm1k_queue()          # M/M/1/k
     network4, data4 = example_mmck_queue()          # M/M/c/k
