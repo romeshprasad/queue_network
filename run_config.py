@@ -1,6 +1,6 @@
 import numpy as np
 from queueing_network import QueueingNetwork
-from visualization import print_statistics, plot_queue_lengths
+from visualization import print_statistics, plot_queue_lengths, visualize_network
 
 
 def run_from_config(config_path, seed=42):
@@ -22,10 +22,11 @@ def run_from_config(config_path, seed=42):
     print("="*80)
     
     # Create network from config
-    network = QueueingNetwork(config_path)
+    network = QueueingNetwork()
+    network.load_from_config(config_path)
     
     # Run simulation
-    agents_data = network.simulate()
+    agents_data = network.simulate(100.0)
     
     # Get overall statistics
     stats = network.get_statistics()
@@ -57,12 +58,15 @@ def run_from_config(config_path, seed=42):
     
     # Optional: Plot queue lengths
     # plot_queue_lengths(agents_data, "Multi-Class Network - Queue Lengths")
+
+    visualize_network(network, stats, stats_by_category)
     
     return network, agents_data, stats
 
 
 if __name__ == "__main__":
     # Run with the example config
-    network, data, stats = run_from_config('configs/multi_class/factory_three_class.yaml')
-    
+    # network, data, stats = run_from_config('configs/networks/jackson_branching.yaml')
+    network, data, stats = run_from_config('config.yaml')
+
     print("\n✓ Simulation completed successfully!")

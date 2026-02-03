@@ -3,6 +3,280 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 import os
+import networkx as nx
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+from matplotlib.widgets import RadioButtons
+import matplotlib.colors as mcolors
+import random
+
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+import matplotlib.cm as cm
+import numpy as np
+import networkx as nx
+import random
+from matplotlib.lines import Line2D
+
+def visualize_network_with_stats(
+    network, stats,
+    title = 'Network Connectivity Performance',
+    min_color="green",
+    max_color="red"
+):
+
+    # Gather queue IDs
+    queue_ids = [q.queue_id for q in network.queues]
+    n = len(queue_ids)
+
+    # Validate routing matrices
+    for cat, mat in network.routing_matrices.items():
+        mat = np.array(mat)
+        if mat.shape != (n, n):
+            raise ValueError(f"Routing matrix for '{cat}' must be {n}x{n}, got {mat.shape}")
+
+    # Create graph
+    G = nx.MultiDiGraph()
+    for qid in queue_ids:
+        G.add_node(qid)
+
+    G.add_node("Exit")
+
+    categories = list(network.routing_matrices.keys())
+    cmap20 = plt.get_cmap("tab20")
+    colors = {cat: cmap20(i % 20) for i, cat in enumerate(categories)}
+
+    curvature_values = np.linspace(-0.5, 0.5, len(categories))
+    curvature = {cat: float(curvature_values[i]) for i, cat in enumerate(categories)}
+
+    edges_by_category = {cat: [] for cat in categories}
+
+    # Build edges
+    for cat, mat in network.routing_matrices.items():
+        mat = np.array(mat)
+
+        for i in range(n):
+            row_sum = float(np.sum(mat[i, :]))
+
+            if row_sum < 0.1:
+                src = queue_ids[i]
+                dst = "Exit"
+                p = 1.0
+                edges_by_category[cat].append((src, dst, p))
+                G.add_edge(src, dst, category=cat, probability=p)
+                continue
+
+            for j in range(n):
+                p = mat[i, j]
+                if p > 0:
+                    src = queue_ids[i]
+                    dst = queue_ids[j]
+                    edges_by_category[cat].append((src, dst, p))
+                    G.add_edge(src, dst, category=cat, probability=p)
+
+    # Graph layout
+    pos = nx.spring_layout(G, seed=42)
+    for k in pos:
+        pos[k][0] += (random.random() - 0.5) * 0.05
+        pos[k][1] += (random.random() - 0.5) * 0.05
+
+    fig, ax = plt.subplots(figsize=(10, 7))
+
+    # Node Color Gradient Based on Stats
+    if stats is None:
+        stats = {}
+
+    stat_values = [stats.get(qid, 0) for qid in queue_ids]
+
+    vmin = min(stat_values) if len(stat_values) > 0 else 0
+    vmax = max(stat_values) if len(stat_values) > 0 else 1
+    if vmin == vmax:
+        vmax = vmin + 1e-9
+
+    node_cmap = mcolors.LinearSegmentedColormap.from_list(
+        "node_gradient", [min_color, max_color]
+    )
+
+    norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+
+    node_colors = [node_cmap(norm(stats.get(qid, vmin))) for qid in queue_ids]
+    node_colors.append("gray")
+
+    nx.draw_networkx_nodes(
+        G,
+        pos,
+        node_size=1400,
+        node_color=node_colors,
+        ax=ax
+    )
+
+    nx.draw_networkx_labels(G, pos, font_size=11, font_weight="bold", ax=ax)
+
+    # Draw edges
+    for cat, edges in edges_by_category.items():
+        if not edges:
+            continue
+
+        edge_list = [(s, d) for s, d, _ in edges]
+
+        nx.draw_networkx_edges(
+            G,
+            pos,
+            edgelist=edge_list,
+            connectionstyle=f"arc3,rad={curvature[cat]}",
+            arrowstyle="simple",
+            arrowsize=22,
+            width=2.5,
+            edge_color=[colors[cat]] * len(edge_list),
+            min_source_margin=25,
+            min_target_margin=25,
+            ax=ax      # FIX PART 2
+        )
+
+    # Legend
+    category_legend = [
+        Line2D([0], [0], color=colors[cat], lw=3, label=str(cat))
+        for cat in categories
+    ]
+    ax.legend(handles=category_legend, title="Routing Categories", loc="lower left")
+
+    sm = cm.ScalarMappable(cmap=node_cmap, norm=norm)
+    sm.set_array([])
+
+    cbar = plt.colorbar(sm, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label("Node Statistic", rotation=90)
+
+    ax.set_title(title)
+    ax.axis("off")
+    plt.tight_layout()
+    plt.show()
+
+
+
+
+def visualize_network(network, stats = None, cat_stats = None):
+
+    # Gather queue IDs
+    queue_ids = [q.queue_id for q in network.queues]
+    n = len(queue_ids)
+
+    # Validate matrices
+    for cat, mat in network.routing_matrices.items():
+        mat = np.array(mat)
+        if mat.shape != (n, n):
+            raise ValueError(f"Routing matrix for '{cat}' must be {n}x{n}, got {mat.shape}")
+
+    # Create graph
+    G = nx.MultiDiGraph()
+    for qid in queue_ids:
+        G.add_node(qid)
+
+    G.add_node("Exit")
+
+    # Colors and curvature assignment
+    categories = list(network.routing_matrices.keys())
+    cmap = plt.get_cmap("tab20")
+    colors = {cat: cmap(i % 20) for i, cat in enumerate(categories)}
+
+    # Give each category a unique curvature for parallel edges
+    curvature_values = np.linspace(-0.5, 0.5, len(categories))
+    curvature = {cat: float(curvature_values[i]) for i, cat in enumerate(categories)}
+
+    # Track edges by category
+    edges_by_category = {cat: [] for cat in categories}
+
+    # Build edges
+    for cat, mat in network.routing_matrices.items():
+        mat = np.array(mat)
+
+        for i in range(n):
+            if sum(mat[i, :]) < 0.1:
+                p = 1
+                src = queue_ids[i]
+                dst = 'Exit'
+                edges_by_category[cat].append((src, dst, p))
+                G.add_edge(src, dst, category=cat, probability=p)
+                continue
+
+            for j in range(n):
+                p = mat[i, j]
+                if p > 0:
+                    src = queue_ids[i]
+                    dst = queue_ids[j]
+                    edges_by_category[cat].append((src, dst, p))
+                    G.add_edge(src, dst, category=cat, probability=p)
+
+    # Node layout
+    pos = nx.spring_layout(G, seed=42)
+
+    # Prevent perfect overlaps
+    for k in pos:
+        pos[k][0] += (random.random() - 0.5) * 0.05
+        pos[k][1] += (random.random() - 0.5) * 0.05
+
+    # Draw nodes
+    plt.figure(figsize=(10,7))
+    nx.draw_networkx_nodes(G, pos, node_size=1400, node_color="lightgray")
+    nx.draw_networkx_labels(G, pos, font_size=11, font_weight="bold")
+
+    # Draw edges category-by-category
+    for cat, edges in edges_by_category.items():
+        if not edges:
+            continue
+
+        edge_list = [(s, d) for s, d, _ in edges]
+
+        nx.draw_networkx_edges(
+            G,
+            pos,
+            edgelist=edge_list,
+            connectionstyle=f"arc3,rad={curvature[cat]}",   # curvature to separate arrows
+            arrowstyle="simple",
+            arrowsize=22,
+            width=2.5,
+            edge_color=[colors[cat]] * len(edge_list),
+            min_source_margin=25,   # push arrows away from nodes
+            min_target_margin=25
+        )
+
+    # Legend
+    legend_elements = [
+        Line2D([0], [0], color=colors[cat], lw=3, label=str(cat))
+        for cat in categories
+    ]
+    plt.legend(handles=legend_elements, title="Routing Categories")
+
+    plt.title("Queueing Network Connectivity")
+    plt.axis("off")
+    plt.tight_layout()
+    plt.show()
+
+    if stats is None:
+        return
+
+    statistic = {
+        queue_ids[i]: float(stats[i]['rho'])
+        for i in stats.keys()
+    }
+    visualize_network_with_stats(network, statistic, title='Network Performance of Server Utilization')
+
+    statistic = {
+        queue_ids[i]: float(stats[i]['L'])
+        for i in stats.keys()
+    }
+    visualize_network_with_stats(network, statistic, title='Network Performance of Average Customers in System')
+
+    statistic = {
+        queue_ids[i]: float(stats[i]['Wq'])
+        for i in stats.keys()
+    }
+    visualize_network_with_stats(network, statistic, title='Network Performance of Average Wait Time')
+
+    statistic = {
+        queue_ids[i]: float(stats[i]['lambda_eff'])
+        for i in stats.keys()
+    }
+    visualize_network_with_stats(network, statistic, title='Network Performance of Throughput', min_color='red', max_color='green')
 
 
 def plot_queue_lengths(agents_data, title="Queue Length Over Time"):

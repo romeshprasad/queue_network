@@ -1,5 +1,6 @@
 import numpy as np
 from server import Server
+from distribution_model import DistributionModel
 
 
 class Queue:
@@ -22,7 +23,7 @@ class Queue:
         List of agents waiting for service (FIFO order)
     """
     
-    def __init__(self, queue_id, num_servers, service_rate, capacity=float('inf')):
+    def __init__(self, queue_id, num_servers, service_rate = None, processing_time_model: DistributionModel = None, capacity=float('inf'), dispatch_policy=None):
         """
         Initialize a queue.
         
@@ -34,15 +35,20 @@ class Queue:
             Number of parallel servers
         service_rate : float
             Mean service rate (mu)
+        processing_time_model : ProcessingTimeModel
+            service time model
+            If none, use agent's value (Must not be None)
         capacity : float or int, optional
             Maximum waiting queue capacity (default: infinite)
         """
         self.queue_id = queue_id
         self.num_servers = num_servers
         self.service_rate = service_rate
+        self.processing_time_model = processing_time_model
         self.capacity = capacity
         self.servers = [Server(i) for i in range(num_servers)]
         self.waiting_queue = []
+        self.dispatch_policy = dispatch_policy or (lambda q: q.pop(0))
     
     def get_free_server(self):
         """
@@ -94,9 +100,10 @@ class Queue:
         Agent or None
             Next agent in queue, or None if queue is empty
         """
-        if self.waiting_queue:
-            return self.waiting_queue.pop(0)
-        return None
+        if not self.waiting_queue:
+            return None
+        
+        return self.dispatch_policy(self.waiting_queue)
     
     def generate_service_time(self):
         """
@@ -107,7 +114,18 @@ class Queue:
         float
             Service time
         """
-        return np.random.exponential(1.0 / self.service_rate)
+        if self.processing_time_model is not None:
+            return self.processing_time_model.sample()
+        elif self.service_rate is not None:
+            return np.random.exponential(1.0 / self.service_rate)
+        else:
+            time = self.waiting_queue[0].estimate_processing_time()
+            if time is None:
+                raise ValueError(f"Cannot have None Processing Model for both queue and agents. At least one must be defined.")
+            else:
+                return time
+
+        
     
     def get_current_queue_length(self):
         """

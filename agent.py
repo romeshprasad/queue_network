@@ -1,5 +1,5 @@
 import numpy as np
-
+from distribution_model import DistributionModel
 
 class Agent:
     """
@@ -21,7 +21,7 @@ class Agent:
         ID of server providing service to this agent
     """
     
-    def __init__(self, arrival_time, agent_id, category = None):
+    def __init__(self, arrival_time, agent_id, priority = 0, processing_time_model: DistributionModel = None, category = None):
         """
         Initialize an agent.
         
@@ -41,6 +41,8 @@ class Agent:
         self.server_id = None
         self.agent_id = agent_id
         self.category = category
+        self.priority = priority
+        self.processing_time_model = processing_time_model
     
     def __lt__(self, other):
         """
@@ -53,6 +55,13 @@ class Agent:
         """String representation for debugging."""
         cat_str = f", cat={self.category}" if self.category else ""
         return f"Agent(id={self.agent_id}, arrival={self.arrival_time:.3f}{cat_str})"
+    
+    def estimate_processing_time(self):
+        """Sample processing time from the distribution."""
+        if self.processing_time_model is not None:
+            return self.processing_time_model.sample()
+        else:
+            return None
     
     @staticmethod
     def generate_interarrival_time(arrival_rate):

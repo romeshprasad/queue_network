@@ -1,7 +1,7 @@
 import numpy as np
 import heapq
 from agent import Agent
-from queue import Queue
+from queue_node import Queue
 from config_loader import NetworkConfig
 
 class QueueingNetwork:
@@ -57,63 +57,116 @@ class QueueingNetwork:
     ARRIVAL = 0
     DEPARTURE = 1
 
-    def __init__(self, config_path):
+    def __init__(self, arrival_rate=0.0, arrival_queue_id=0):
         """
-        Initialize the queueing network from configuration file.
+        Initialize the queueing network.
         
         Parameters
         ----------
-        config_path : str
-            Path to YAML configuration file
+        arrival_rate : float
+            Arrival rate
+        arrival_queue_id : int, optional
+            Default arrival queue
         """
-        # Load and validate configuration
-        self.config = NetworkConfig(config_path)
-        self.config.load()
-        self.config.validate()
-        self.config.print_summary()
         
-        # Extract parameters from config
-        self.max_time = self.config.get_max_time()
-        num_servers = self.config.get_num_servers()
-        capacities = self.config.get_capacities()
-        
-        # Multi-class parameters
-        self.categories = self.config.get_category_names()
-        self.category_probs = self.config.get_category_arrival_probabilities()
-        self.routing_matrices = {cat: self.config.get_routing_matrix(cat) for cat in self.categories}
-        self.category_service_rates = {cat: self.config.get_service_rates(cat) for cat in self.categories}
-        
-        # Arrival parameters
-        self.arrival_rate = self.config.get_external_arrival_rate()
-        self.arrival_queue_id = self.config.get_arrival_queue()
-        
-        # Create queues (service rates will be category-specific, so use dummy values here)
-        # We'll override service time generation in assign_server()
-        self.queues = [
-            Queue(i, num_servers[i], service_rate=1.0, capacity=capacities[i])
-            for i in range(self.config.get_num_queues())
-        ]
-        
+        # Set default parameters
+        self.max_time = None
+
+        self.arrival_rate = arrival_rate
+        self.arrival_queue_id = arrival_queue_id
+
+        self.queues = []
+
+        self.categories = []
+        self.category_probs = {}
+        self.routing_matrices = {}
+        self.category_service_rates = {}
+
         # Simulation state
         self.time = 0.0
         self.event_queue = []
         self.agents_data = []
         self.rejected_agents = []
         self.agent_counter = 0
-        
         # Store agent objects for event processing
         self._active_agents = {}
-        
         # Time-weighted statistics tracking
-        self.state_changes = {i: [] for i in range(len(self.queues))}
+        self.state_changes = {}
         self.server_busy_periods = []
-        self.arrival_counts = {i: 0 for i in range(len(self.queues))}
-        self.accepted_arrival_counts = {i: 0 for i in range(len(self.queues))}
-        
+        self.arrival_counts = {}
+        self.accepted_arrival_counts = {}
         # NEW: Per-category tracking
-        self.arrival_counts_by_category = {cat: {i: 0 for i in range(len(self.queues))} for cat in self.categories}
-        self.accepted_arrival_counts_by_category = {cat: {i: 0 for i in range(len(self.queues))} for cat in self.categories}
-        self.agents_data_by_category = {cat: [] for cat in self.categories}
+        self.arrival_counts_by_category = {}
+        self.accepted_arrival_counts_by_category = {}
+        self.agents_data_by_category = {}
+
+    def load_from_config(self, config_path):
+        """
+        Initialize the queueing network from configuration file.
+
+        Parameters
+        ----------
+        config_path : str
+            Path to YAML configuration file
+        """
+        # Load and validate configuration
+        config = NetworkConfig(config_path)
+        config.load()
+        config.validate()
+        config.print_summary()
+
+        # Extract parameters from config
+        # self.max_time = self.config.get_max_time()
+        num_servers = config.get_num_servers()
+        capacities = config.get_capacities()
+
+        # Multi-class parameters
+        self.categories = config.get_category_names()
+        self.category_probs = config.get_category_arrival_probabilities()
+        self.routing_matrices = {cat: config.get_routing_matrix(cat) for cat in self.categories}
+        self.category_service_rates = {cat: config.get_service_rates(cat) for cat in self.categories}
+
+        # Arrival parameters
+        self.arrival_rate = config.get_external_arrival_rate()
+        self.arrival_queue_id = config.get_arrival_queue()
+
+        # Create queues (service rates will be category-specific, so use dummy values here)
+        # We'll override service time generation in assign_server()
+        self.queues = [
+            Queue(i, num_servers[i], service_rate=1.0, capacity=capacities[i])
+            for i in range(config.get_num_queues())
+        ]
+
+    def get_num_queues(self):
+        return len(self.queues)
+
+    def get_num_categories(self):
+        return len(self.categories)
+
+    def add_queue(self, *args, **kwargs):
+        # Create queues (service rates will be category-specific, so use dummy values here)
+        # We'll override service time generation in assign_server()
+        idx = len(self.queues)
+
+        self.queues.append(Queue(idx, *args, **kwargs))
+
+    def add_category(self, name, probability, routing_matrix, service_rate):
+        self.categories.append(name)
+        self.category_probs[name] = probability
+        self.routing_matrices[name] = routing_matrix
+        self.category_service_rates[name] = service_rate
+
+    def disable_queue(self, queue_id):
+        # Disable a specific queue
+        disabled_queue = self.queues[queue_id]
+        for server in disabled_queue.servers:
+            server.is_busy = True
+
+    def enable_queue(self, queue_id):
+        # Enable a specific queue
+        disabled_queue = self.queues[queue_id]
+        for server in disabled_queue.servers:
+            server.is_busy = False
 
     def record_state_change(self, queue_id):
         """
@@ -617,7 +670,7 @@ class QueueingNetwork:
         
         return stats
 
-    def simulate(self):
+    def simulate(self, max_time):
         """
         Run the discrete-event simulation.
         
@@ -626,6 +679,30 @@ class QueueingNetwork:
         numpy.ndarray
             Array of agent statistics
         """
+        self.max_time = max_time
+
+        # Simulation state
+        self.time = 0.0
+        self.event_queue = []
+        self.agents_data = []
+        self.rejected_agents = []
+        self.agent_counter = 0
+
+        # Store agent objects for event processing
+        self._active_agents = {}
+
+        # Time-weighted statistics tracking
+        self.state_changes = {i: [] for i in range(len(self.queues))}
+        self.server_busy_periods = []
+        self.arrival_counts = {i: 0 for i in range(len(self.queues))}
+        self.accepted_arrival_counts = {i: 0 for i in range(len(self.queues))}
+
+        # NEW: Per-category tracking
+        self.arrival_counts_by_category = {cat: {i: 0 for i in range(len(self.queues))} for cat in self.categories}
+        self.accepted_arrival_counts_by_category = {cat: {i: 0 for i in range(len(self.queues))} for cat in
+                                                    self.categories}
+        self.agents_data_by_category = {cat: [] for cat in self.categories}
+
         print(f"Starting simulation: max_time={self.max_time}")
         print(f"Network configuration: {len(self.queues)} queues, {len(self.categories)} categories")
         print("-" * 60)
